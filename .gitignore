@@ -1,0 +1,8 @@
+# Personal documents — never publish these
+*.pdf
+
+# Local tooling
+.claude/
+.vscode/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,27 @@
+# Hostinger (LiteSpeed / Apache) settings for Cloud Island
+
+# Always use HTTPS (enable the free SSL certificate in hPanel first)
+RewriteEngine On
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# The game is built from JavaScript modules
+AddType text/javascript .js .mjs
+
+<IfModule mod_headers.c>
+  # File names stay the same between deploys, so browsers must re-check
+  # code and styles (a quick 304 when unchanged) instead of using stale copies
+  <FilesMatch "\.(html|js|css)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
+
+# Git deployment copies the repository's .git folder into public_html — hide it
+RedirectMatch 404 /\.git
+RedirectMatch 404 /README\.md$

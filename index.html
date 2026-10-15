@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Yumnam Momojit — Cloud Island Portfolio</title>
+  <meta name="description" content="Interactive 3D portfolio of Yumnam Momojit Singh — Assistant Professor & Researcher at the Centre of Artificial Intelligence, Indira University, Pune. Explore Cloud Island, a playable Three.js world." />
+  <meta name="theme-color" content="#070b18" />
+  <meta property="og:title" content="Yumnam Momojit — Cloud Island Portfolio" />
+  <meta property="og:description" content="Assistant Professor & AI Researcher, Indira University, Pune. Explore my playable 3D portfolio." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="scene" tabindex="-1" aria-label="3D world: Cloud Island. Use the classic view (C) for a text version."></canvas>
+
+  <!-- Loading -->
+  <div id="loader" class="screen">
+    <div class="spinner" aria-hidden="true"></div>
+    <p>Provisioning Cloud Island…</p>
+  </div>
+
+  <!-- Title screen -->
+  <div id="start" class="screen hidden">
+    <div class="start-card">
+      <div class="eyebrow">Interactive portfolio · Cloud Island</div>
+      <h1>Yumnam <span>Momojit</span></h1>
+      <p class="role">Assistant Professor &amp; Researcher · Centre of Artificial Intelligence</p>
+      <p class="org-line">Indira University, Pune · PhD Scholar</p>
+      <p class="focus">Agentic AI · Deep Learning &amp; MLOps · Cloud &amp; DevOps</p>
+      <form class="name-form" id="name-form" autocomplete="off">
+        <label for="explorer-name">What should we call you, explorer?</label>
+        <div class="name-row">
+          <input id="explorer-name" maxlength="20" placeholder="Your name (optional)" spellcheck="false" />
+          <button type="submit" id="btn-start" class="btn primary big">▶ Play</button>
+        </div>
+        <div class="actions">
+          <button type="button" id="btn-guest" class="btn ghost">Play as Guest</button>
+          <button type="button" id="btn-classic-start" class="btn ghost">Classic view</button>
+        </div>
+        <p class="name-note">Your name only stays in this browser — it's never sent anywhere.</p>
+      </form>
+      <ul class="controls">
+        <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</li>
+        <li><kbd>Shift</kbd> sprint</li>
+        <li><kbd>Space</kbd> jump ×2</li>
+        <li><kbd>E</kbd> interact</li>
+        <li><kbd>Drag</kbd> look</li>
+        <li><kbd>M</kbd> map</li>
+      </ul>
+      <p class="hint">Explore 12 zones — my hometown on the India map, a waterfall, snow peaks and an AI Learning Lab — win challenges and learn something new.</p>
+    </div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-tl">
+      <div class="player-card glass">
+        <div class="avatar" id="pc-avatar" aria-hidden="true">G</div>
+        <div class="pc-info">
+          <div class="pc-name" id="pc-name">Guest Explorer</div>
+          <div class="pts-row"><span class="star" aria-hidden="true">⭐</span><b id="pts">0</b><small>pts</small></div>
+          <div class="pc-level"><b id="lvl">LV 1</b> · <span id="lvl-title">Visitor</span></div>
+          <div class="xpbar" role="progressbar" aria-label="Experience points"><div id="xpfill"></div></div>
+          <div class="xp-text" id="xp-text"></div>
+        </div>
+      </div>
+      <div class="quests glass" id="quests">
+        <button class="q-head" aria-expanded="true">Quests <span aria-hidden="true">▾</span></button>
+        <ul id="quest-list"></ul>
+        <div class="q-sub">Challenges <b id="task-count">0/8</b></div>
+        <ul id="task-list"></ul>
+      </div>
+    </div>
+
+    <div class="hud-tr">
+      <canvas id="minimap" width="180" height="180" aria-hidden="true"></canvas>
+      <div id="zone-name" class="zone-name">Cloud Island</div>
+    </div>
+
+    <div class="toolbar glass" role="toolbar" aria-label="Game options">
+      <button id="btn-map" title="Map & fast travel (M)" aria-label="Open map">🗺</button>
+      <button id="btn-classic" title="Classic view (C)" aria-label="Open classic portfolio view">📄</button>
+      <button id="btn-sound" title="Sound">🔊</button>
+      <button id="btn-quality" title="Graphics quality">HQ</button>
+      <button id="btn-help" title="Help (H)" aria-label="Help and controls">?</button>
+    </div>
+
+    <div id="zone-banner" class="zone-banner hidden" aria-live="polite"></div>
+    <button id="prompt" class="prompt hidden"><kbd>E</kbd><span id="prompt-text"></span></button>
+    <div id="toasts" aria-live="polite"></div>
+    <div id="hint" class="hint-pill hidden" aria-live="polite"></div>
+    <div id="meter" class="meter hidden" aria-live="polite">
+      <div class="meter-top"><span id="meter-label"></span><b id="meter-text"></b></div>
+      <div class="meter-bar"><div id="meter-fill"></div></div>
+    </div>
+    <div id="floaters" aria-hidden="true"></div>
+    <div id="cube-ui" class="cube-ui glass hidden" role="group" aria-label="Rubik's Cube controls">
+      <div class="cube-top">
+        <b>🧊 Flying Rubik's Cube</b>
+        <span id="cube-stats">0 moves · 0:00</span>
+        <button class="btn small" data-cube="exit">Exit (Esc)</button>
+      </div>
+      <div class="cube-moves">
+        <button data-cube="U">U</button><button data-cube="U'">U′</button>
+        <button data-cube="D">D</button><button data-cube="D'">D′</button>
+        <button data-cube="L">L</button><button data-cube="L'">L′</button>
+        <button data-cube="R">R</button><button data-cube="R'">R′</button>
+        <button data-cube="F">F</button><button data-cube="F'">F′</button>
+        <button data-cube="B">B</button><button data-cube="B'">B′</button>
+      </div>
+      <div class="cube-actions">
+        <button class="btn small primary" data-cube="easy">🎲 Easy scramble (3)</button>
+        <button class="btn small" data-cube="full">🌀 Full scramble (20)</button>
+        <button class="btn small" data-cube="undo">↶ Undo</button>
+        <button class="btn small" data-cube="reset">⟲ Reset</button>
+      </div>
+      <p class="cube-help">U Up · D Down · L Left · R Right · F Front · B Back — a letter turns that face clockwise (as if you face it); ′ (or Shift) turns it back.</p>
+    </div>
+    <div id="tooltip" class="tooltip hidden"></div>
+
+    <div id="touch-ui" class="hidden">
+      <div id="joystick" aria-label="Movement joystick"><div id="knob"></div></div>
+      <div class="touch-btns">
+        <button id="btn-act" aria-label="Interact">E</button>
+        <button id="btn-jump" aria-label="Jump">⤒</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info panel -->
+  <div id="panel" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="panel-title">
+    <div class="panel glass">
+      <header>
+        <div>
+          <div class="kicker" id="panel-kicker"></div>
+          <h2 id="panel-title"></h2>
+        </div>
+        <button class="close" id="panel-close" aria-label="Close" data-autofocus>✕</button>
+      </header>
+      <div class="panel-body" id="panel-body"></div>
+      <footer class="panel-foot"><kbd>Esc</kbd> close</footer>
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div id="map" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="map-title">
+    <div class="panel glass map-panel">
+      <header>
+        <div>
+          <div class="kicker">Navigation</div>
+          <h2 id="map-title">Island map &amp; fast travel</h2>
+        </div>
+        <button class="close" data-close aria-label="Close map" data-autofocus>✕</button>
+      </header>
+      <div class="map-wrap">
+        <canvas id="map-canvas" width="520" height="520" aria-hidden="true"></canvas>
+        <ul id="travel-list" class="travel-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help -->
+  <div id="help" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <div class="panel glass">
+      <header>
+        <div>
+          <div class="kicker">How to play</div>
+          <h2 id="help-title">Controls</h2>
+        </div>
+        <button class="close" data-close aria-label="Close help" data-autofocus>✕</button>
+      </header>
+      <div class="panel-body">
+        <ul class="help-grid">
+          <li><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / arrows</span>Move</li>
+          <li><span><kbd>Shift</kbd></span>Sprint (sprint into crates to kick them)</li>
+          <li><span><kbd>Space</kbd></span>Jump — press again mid-air to double jump</li>
+          <li><span><kbd>E</kbd> / <kbd>Enter</kbd></span>Interact with the object in front of you</li>
+          <li><span>Drag · Wheel</span>Rotate camera · zoom</li>
+          <li><span>Click</span>Open any object or kick a crate</li>
+          <li><span><kbd>M</kbd></span>Map &amp; fast travel</li>
+          <li><span><kbd>C</kbd></span>Classic (text) portfolio</li>
+          <li><span><kbd>Esc</kbd></span>Close windows</li>
+          <li><span>Riding</span><kbd>W</kbd>/<kbd>S</kbd> throttle &amp; brake · <kbd>A</kbd>/<kbd>D</kbd> steer · <kbd>Shift</kbd> boost · <kbd>E</kbd> get off</li>
+          <li><span>Basketball</span>Take a ball from the rack, face the hoop, press <kbd>E</kbd> to shoot</li>
+        </ul>
+        <p class="muted">On phones: left joystick to move (push to the edge to sprint), drag anywhere to look, buttons to jump and interact.</p>
+        <p class="muted">Hint: the teal bounce pad near the Skill Tree leads somewhere special.</p>
+        <form class="rename" id="rename-form" autocomplete="off">
+          <label for="rename-input">Explorer name</label>
+          <input id="rename-input" maxlength="20" placeholder="Guest" spellcheck="false" />
+          <button class="btn small" type="submit">Save</button>
+        </form>
+        <button class="btn small danger" id="btn-reset">Reset game progress</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Classic view -->
+  <div id="classic" class="overlay classic hidden" role="dialog" aria-modal="true" aria-label="Classic portfolio">
+    <div class="classic-inner">
+      <div class="classic-bar">
+        <span>Classic view</span>
+        <button class="btn small classic-back" data-close data-autofocus>← Back to the island</button>
+      </div>
+      <div id="classic-body"></div>
+    </div>
+  </div>
+
+  <div id="celebrate" class="celebrate hidden" role="status" aria-live="assertive">
+    <div class="cel-card">
+      <div class="cel-icon" id="cel-icon"></div>
+      <small id="cel-kicker">Challenge complete!</small>
+      <h3 id="cel-title"></h3>
+      <b class="cel-pts" id="cel-pts"></b>
+    </div>
+  </div>
+  <canvas id="confetti" aria-hidden="true"></canvas>
+  <div id="fade" aria-hidden="true"></div>
+
+  <noscript>
+    <div class="screen"><p>This portfolio needs JavaScript. Contact: yumnammomojit7@gmail.com</p></div>
+  </noscript>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
