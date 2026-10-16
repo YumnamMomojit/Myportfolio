@@ -73,6 +73,7 @@ function buildRobot() {
 const RIDE = {
   bicycle: { max: 11, boost: 14.5, accel: 9, turn: 2.6, lift: 0.42, wheelR: 0.42 },
   motorbike: { max: 19, boost: 25, accel: 15, turn: 2.3, lift: 0.5, wheelR: 0.42 },
+  pony: { max: 9, boost: 14, accel: 10, turn: 3, lift: 0.95, wheelR: 1 },
 };
 
 function vbeam(group, a, b, r, mat) {
@@ -137,6 +138,8 @@ export function buildVehicle(kind) {
     const bell = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), new THREE.MeshStandardMaterial({ color: '#fbbf24', metalness: 0.8, roughness: 0.2 }));
     bell.position.set(0.22, 1.15, 0.42);
     group.add(bell);
+  } else if (kind === 'pony') {
+    return buildPony();
   } else {
     const paint = new THREE.MeshStandardMaterial({ color: '#dc2626', metalness: 0.5, roughness: 0.3 });
     wheel(-0.75, 0.4, 0.12);
@@ -161,6 +164,63 @@ export function buildVehicle(kind) {
     vbeam(group, V(0.2, 0.45, -0.1), V(0.24, 0.6, -0.85), 0.05, metal);
   }
   return { group, wheels, crank };
+}
+
+// A Manipuri pony (sagol) — small, sturdy, bay-coloured. Faces +z; legs gallop.
+export function buildPony({ coat = '#7a4a26', dark = '#2b1a10', saddle = '#b91c1c', material = null } = {}) {
+  const group = new THREE.Group();
+  const m = (c) => material || new THREE.MeshStandardMaterial({ color: c, roughness: 0.7 });
+  const C = m(coat), D = m(dark), S = m(saddle);
+  const part = (geo, mat, x, y, z) => {
+    const o = new THREE.Mesh(geo, mat);
+    o.position.set(x, y, z);
+    o.castShadow = true;
+    group.add(o);
+    return o;
+  };
+  part(new THREE.CapsuleGeometry(0.42, 1.1, 6, 12), C, 0, 1.25, 0).rotation.x = Math.PI / 2;
+  const neck = part(new THREE.CylinderGeometry(0.2, 0.32, 0.9, 10), C, 0, 1.72, 0.72);
+  neck.rotation.x = 0.7;
+  const head = part(new THREE.BoxGeometry(0.28, 0.32, 0.62), C, 0, 2.02, 1.12);
+  head.rotation.x = 0.5;
+  part(new THREE.BoxGeometry(0.2, 0.2, 0.22), D, 0, 1.86, 1.38);
+  for (const s of [-1, 1]) part(new THREE.ConeGeometry(0.05, 0.16, 4), C, s * 0.09, 2.27, 0.98);
+  const mane = part(new THREE.BoxGeometry(0.06, 0.5, 0.75), D, 0, 1.92, 0.62);
+  mane.rotation.x = 0.7;
+  const tail = part(new THREE.CylinderGeometry(0.05, 0.12, 0.8, 6), D, 0, 1.15, -0.95);
+  tail.rotation.x = -0.5;
+  part(new THREE.BoxGeometry(0.9, 0.1, 0.7), S, 0, 1.68, -0.05);
+  part(new THREE.BoxGeometry(0.95, 0.35, 0.05), S, 0, 1.5, -0.05);
+  const legs = [];
+  for (const [x, z, ph] of [[0.22, 0.5, 0], [-0.22, 0.5, Math.PI], [0.22, -0.5, Math.PI * 0.5], [-0.22, -0.5, Math.PI * 1.5]]) {
+    const pivot = new THREE.Group();
+    pivot.position.set(x, 1.0, z);
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.75, 4, 8), C);
+    leg.position.y = -0.45;
+    leg.castShadow = true;
+    pivot.add(leg);
+    const hoof = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.12, 0.2), D);
+    hoof.position.y = -0.92;
+    pivot.add(hoof);
+    pivot.userData.ph = ph;
+    group.add(pivot);
+    legs.push(pivot);
+  }
+  return { group, wheels: [], crank: null, legs, tail };
+}
+
+// The kangjei: a long cane mallet with an angled wooden head.
+function buildMallet() {
+  const g = new THREE.Group();
+  const cane = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 1.9, 6), new THREE.MeshStandardMaterial({ color: '#d6b46a', roughness: 0.6 }));
+  cane.position.y = -0.95;
+  g.add(cane);
+  const headM = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.32), new THREE.MeshStandardMaterial({ color: '#7c4a2d' }));
+  headM.position.set(0, -1.9, 0.1);
+  headM.rotation.x = 0.4;
+  g.add(headM);
+  g.position.set(0, -0.55, 0);
+  return g;
 }
 
 // =====================================================================
@@ -188,6 +248,13 @@ export class Player {
     this.ride = null;
     this.speedF = 0;
     this.steer = 0;
+    this.swingT = 0;
+    this.mallet = null;
+  }
+
+  // swing the polo mallet (pony only)
+  swing() {
+    if (this.vehicle === 'pony' && this.swingT <= 0) this.swingT = 0.45;
   }
 
   place(x, y, z, yaw = Math.PI) {
@@ -209,6 +276,10 @@ export class Player {
     this.vehicle = kind;
     this.ride = buildVehicle(kind);
     this.rig.root.add(this.ride.group);
+    if (kind === 'pony') {
+      this.mallet = buildMallet();
+      this.rig.arms[1].add(this.mallet);
+    }
     this.yaw = yaw;
     this.speedF = 0;
     this.vel.set(0, this.vel.y, 0);
@@ -216,6 +287,8 @@ export class Player {
 
   dismount() {
     if (this.ride) this.rig.root.remove(this.ride.group);
+    if (this.mallet) this.mallet.parent.remove(this.mallet);
+    this.mallet = null;
     this.ride = null;
     this.vehicle = null;
     this.speedF = 0;
@@ -258,6 +331,7 @@ export class Player {
       this.vel.z += (mz * target - this.vel.z) * k;
     }
 
+    if (input.jump && this.vehicle) events.vehicleAction?.();
     if (input.jump && !this.vehicle) {
       if (this.onGround || this.coyote > 0) {
         this.vel.y = JUMP;
@@ -356,6 +430,20 @@ export class Player {
         a.rotation.z = (i ? 1 : -1) * 0.12;
       });
       for (const w of this.ride.wheels) w.rotation.x += (this.speedF * dt) / R.wheelR;
+      if (this.ride.legs) {
+        // gallop: each leg swings with its own phase; the body bobs with the stride
+        const amt = Math.min(Math.abs(this.speedF) / 6, 1);
+        this.phase += dt * Math.abs(this.speedF) * 0.9;
+        for (const l of this.ride.legs) l.rotation.x = Math.sin(this.phase * 2 + l.userData.ph) * 0.7 * amt;
+        this.ride.group.position.y = Math.abs(Math.sin(this.phase * 2)) * 0.12 * amt;
+        this.ride.tail.rotation.x = -0.5 - Math.sin(this.phase * 2) * 0.25 * amt;
+        legs.forEach((l, i) => (l.rotation.z = (i ? -1 : 1) * 0.45));
+        // the mallet arm: held up, then a fast downward swing
+        this.swingT = Math.max(0, this.swingT - dt);
+        const k = this.swingT > 0 ? Math.sin((1 - this.swingT / 0.45) * Math.PI) : 0;
+        arms[1].rotation.x = -2.4 + k * 3.4;
+        arms[1].rotation.z = 0.25;
+      }
       if (this.ride.crank) this.ride.crank.rotation.x = this.phase;
       this.ride.group.rotation.z = THREE.MathUtils.damp(this.ride.group.rotation.z, -this.steer * 0.22 * Math.min(Math.abs(this.speedF) / 8, 1), 6, dt);
       body.rotation.z = this.ride.group.rotation.z;

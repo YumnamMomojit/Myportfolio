@@ -309,6 +309,55 @@ model.fit(X, y, epochs=50)   # forward pass + backpropagation, 50 times`)}</code
         { q: 'What do the early layers of a CNN usually detect?', options: ['Whole faces', 'Simple edges and blobs', 'The image caption'], answer: 1, why: 'Simple features first; deeper layers combine them into complex shapes and objects.' },
       ],
     },
+    'learn:polo': {
+      task: 'polo-story', kicker: 'Manipur heritage · Sagol Kangjei', color: '#fb923c',
+      steps: [
+        {
+          title: 'A game of gods and kings',
+          html: () => `<p class="lead"><b>Sagol Kangjei</b> — literally "horse hockey" (<i>sagol</i> = pony, <i>kangjei</i> = stick) — is the traditional polo of the Meitei people of Manipur, and the game that modern polo grew from.</p>
+            <div class="parts three">
+              <div><b>🌙 Legend</b><small>Meitei tradition says the gods played it first, led by <b>Marjing</b> — the Meitei god of horses and polo — and Thangjing.</small></div>
+              <div><b>📜 Chronicle</b><small>The <i>Kangjeirol</i> text says it was played in the time of King <b>Kangba</b>.</small></div>
+              <div><b>👑 Rules</b><small>King <b>Khagemba</b> (1597–1652) popularised the game and revised its rules.</small></div>
+            </div>
+            <p class="muted">The bronze rider in front of you is inspired by the Marjing Polo Statue in Heingang, Imphal East — unveiled in January 2023 as the world's tallest statue of a polo player.</p>`,
+        },
+        {
+          title: 'Pony, mallet and ball',
+          html: () => `<div class="parts three">
+              <div><b>🐎 The Manipuri pony</b><small>Small (about 11–13 hands), quick and sure-footed — bred for exactly this game.</small></div>
+              <div><b>🏑 The kangjei</b><small>A long mallet of seasoned cane with an angled wooden head.</small></div>
+              <div><b>⚪ The ball</b><small>Made from bamboo root, roughly 10 cm across.</small></div>
+            </div>
+            <p>Players traditionally wear short-sleeved jackets, white dhotis and a turban (<i>kokyet</i>). Ponies wear guards and decorations too.</p>`,
+        },
+        {
+          title: 'How the game is played',
+          html: () => `<p class="lead"><b>Seven players a side</b> — traditionally a northern and a southern team.</p>
+            <div class="loop">
+              <div><b>🏇 Ride</b><small>chase the ball at full gallop</small></div><span>→</span>
+              <div><b>🏑 Strike</b><small>hit it with the cane mallet</small></div><span>→</span>
+              <div><b>🏁 Score</b><small>drive it over the opponents' end line</small></div>
+            </div>
+            <p>There are <b>no goal posts</b> in Sagol Kangjei: a goal is scored when the ball crosses the end line. That is exactly how the ground here works — ride the pony at the stable, press <b>Space</b> to swing and score 3 goals.</p>`,
+        },
+        {
+          title: 'From Imphal to the world',
+          html: () => `<p>The <b>Imphal Polo Ground</b> is often called the oldest polo ground in the world, and there is an inner polo ground inside Kangla Fort.</p>
+            <div class="parts three">
+              <div><b>1850s</b><small>British officer Joseph Ford Sherer — later called the "father of modern polo" — learnt and played the game in Manipur.</small></div>
+              <div><b>1859</b><small>Tea planters who learnt from Manipuri players founded the Silchar (Cachar) polo club.</small></div>
+              <div><b>1862</b><small>The Calcutta Polo Club followed — and from there the game spread across the world.</small></div>
+            </div>
+            <p class="muted">Today Manipur still hosts Sagol Kangjei matches and international polo tournaments, and works to protect the Manipuri pony.</p>`,
+        },
+      ],
+      quiz: [
+        { q: 'What does "sagol" mean in Sagol Kangjei?', options: ['Pony', 'Ball', 'Field'], answer: 0, why: 'Sagol is the pony; kangjei is the stick — "horse hockey".' },
+        { q: 'How many players does each side have?', options: ['Four', 'Seven', 'Eleven'], answer: 1, why: 'Traditional Sagol Kangjei is played seven a side.' },
+        { q: 'How is a goal scored?', options: ['Hitting the ball between two posts', 'Driving the ball over the end line', 'Touching the ball with the pony'], answer: 1, why: 'There are no goal posts: a goal is scored when the ball crosses the end line.' },
+      ],
+    },
   };
 
   // ------------------------------------------------------------ ML playground

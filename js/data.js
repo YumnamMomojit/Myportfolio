@@ -321,4 +321,8 @@ export const TASKS = [
   { id: 'learn-ml', icon: '📈', title: 'Lesson: Machine Learning', hint: 'AI Learning Lab — train your own classifier and watch it learn.', pts: 150, goal: 1, learn: true },
   { id: 'learn-nn', icon: '🧠', title: 'Lesson: Neural Networks', hint: 'AI Learning Lab — poke a live network that solves XOR.', pts: 150, goal: 1, learn: true },
   { id: 'learn-cnn', icon: '👁️', title: 'Lesson: Convolutional Networks', hint: 'AI Learning Lab — draw an image and run filters over it like a CNN.', pts: 150, goal: 1, learn: true },
+  // Manipur Island (LV 3, by train from the east station)
+  { id: 'calendar', icon: '🗓️', title: 'Walk the Meitei calendar (12 months)', hint: 'Manipur Island — stand in front of every month stone in the calendar ring.', pts: 200, goal: 12 },
+  { id: 'polo-story', icon: '📜', title: 'Lesson: the story of Sagol Kangjei', hint: 'Manipur Island — visit the bronze polo rider and finish the story and quiz.', pts: 150, goal: 1, learn: true },
+  { id: 'polo', icon: '🏇', title: 'Score 3 goals in Sagol Kangjei', hint: 'Manipur Island — ride the pony, press Space to swing the mallet and drive the ball over an end line.', pts: 250, goal: 3 },
 ];

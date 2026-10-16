@@ -547,6 +547,22 @@ kbd {
 .travel-list .travel-head { margin: 10px 0 2px; font: 700 0.72rem var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
 .travel.locked { opacity: 0.55; }
 
+/* Manipur Island: Meitei Mayek and the calendar */
+.mm { font-family: 'Noto Sans Meetei Mayek', var(--font); }
+.mm-big { margin: 0 0 6px; font-size: 2.1rem; line-height: 1.3; color: #fde68a; }
+table.cal { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: 0.9rem; }
+table.cal th, table.cal td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+table.cal th { font: 700 0.7rem var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+table.cal .mm { font-size: 1.15rem; color: #fde68a; }
+table.cal tr.now td { background: rgba(251, 146, 60, 0.12); }
+table.cal tr.seen td:first-child::after { content: ' ✓'; color: #4ade80; }
+table.cal small { font: 700 0.65rem var(--mono); color: #fb923c; text-transform: uppercase; }
+.linkish { background: none; border: 0; padding: 0; color: var(--text); font: 600 0.9rem var(--font); text-decoration: underline dotted; cursor: pointer; }
+ul.fest { list-style: none; padding: 0; margin: 8px 0 12px; display: grid; gap: 6px; }
+ul.fest li { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; padding: 8px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); }
+ul.fest .mm { font-size: 1.15rem; color: #fbbf24; }
+ul.fest span:last-child { color: var(--muted); font-size: 0.85rem; }
+
 /* ---------- small screens ---------- */
 @media (max-width: 640px) {
   .hud-tl { top: 10px; left: 10px; gap: 6px; }

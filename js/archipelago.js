@@ -1,10 +1,12 @@
 // The archipelago: themed islands around Cloud Island, linked by a living root
 // bridge, a road bridge, a hidden stone bridge, two train lines and a cable car.
-// Each island unlocks at a level; its learning adventure arrives in later updates.
+// Each island unlocks at a level. Manipur Island's adventure is built in manipur.js;
+// the other islands' adventures arrive in later updates.
 import * as THREE from 'three';
 import { makeLabel, drawCanvas, mulberry32, FONT } from './utils.js';
 import { std, glowMat, mesh, jitter, waterMaterial, softSpriteTexture } from './helpers.js';
 import { hashAnswer } from './puzzles.js';
+import { buildManipur } from './manipur.js';
 
 const norm = (x, z) => { const l = Math.hypot(x, z); return [x / l, z / l]; };
 const DIR = {
@@ -57,7 +59,7 @@ export function buildArchipelago(scene, W, circle, interact, quality) {
   for (const I of ISLANDS) {
     buildIslandBase(scene, I, rng);
     W.isles.push({ id: I.id, x: I.c[0], z: I.c[1], r: I.r - 1.4 });
-    THEMES[I.id](scene, W, I, circle, rng, quality);
+    THEMES[I.id](scene, W, I, circle, rng, quality, interact);
     const lbl = makeLabel(`${I.icon} ${I.name}`, { sub: `${I.sub} · unlocks at LV ${I.req}`, accent: I.color, height: 2.2 });
     lbl.position.set(I.c[0], 22, I.c[1]);
     scene.add(lbl);
@@ -138,7 +140,7 @@ function signboard(scene, I, circle, interact) {
     c.fillText(line, 26, y);
     c.fillStyle = '#fbbf24';
     c.font = `700 24px ${FONT}`;
-    c.fillText('🚧 Adventure arriving in the next update', 26, h - 26);
+    c.fillText(I.id === 'manipur' ? '✅ Calendar · Polo story · Pony polo — explore!' : '🚧 Adventure arriving in the next update', 26, h - 26);
   });
   g.add(mesh(new THREE.BoxGeometry(2.9, 1.7, 0.08), [wood, wood, wood, wood, new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }), wood], 0, 1.9, 0));
   scene.add(g);
@@ -184,38 +186,9 @@ function instanced(scene, geo, mat, items, place) {
 }
 
 const THEMES = {
-  manipur(scene, W, I, circle, rng) {
-    const [cx, cz] = I.c;
-    // Loktak-style lake with floating phumdis
-    const lake = { x: cx + 10, z: cz + 6, r: 11 };
-    const water = new THREE.Mesh(new THREE.CircleGeometry(lake.r, 48).rotateX(-Math.PI / 2), waterMaterial({ deep: '#0f5a73', shallow: '#46b5c9', opacity: 0.9 }));
-    water.position.set(lake.x, 0.07, lake.z);
-    scene.add(water);
-    W.lakes.push({ x: lake.x, z: lake.z, r: lake.r - 0.4, depth: -0.6 });
-    const phumdi = std('#5a7d2e');
-    for (let i = 0; i < 9; i++) {
-      const a = rng() * Math.PI * 2, r = 2 + rng() * 7;
-      const p = mesh(new THREE.TorusGeometry(0.8 + rng() * 0.9, 0.35, 6, 18), phumdi, lake.x + Math.cos(a) * r, 0.12, lake.z + Math.sin(a) * r);
-      p.rotation.x = Math.PI / 2;
-      p.scale.z = 0.4;
-      scene.add(p);
-      const ph = rng() * 6;
-      W.updaters.push((t) => (p.position.y = 0.12 + Math.sin(t * 0.8 + ph) * 0.04));
-    }
-    // rolling green hills around the rim
-    const hills = scatter(I, 9, rng, I.r - 9, I.r - 4, clearPath(I));
-    instanced(scene, new THREE.SphereGeometry(1, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), std('#5aa85a'), hills, ([x, z, k]) => ({ x, y: 0, z, sx: 4 + k * 4, sy: 2 + k * 3, sz: 4 + k * 3 }));
-    // a Sangai (brow-antlered deer) grazing by the lake
-    scene.add(sangai(lake.x - lake.r - 1.5, lake.z - 2));
-    // polo ground marked out for the next update
-    const ground = mesh(new THREE.PlaneGeometry(16, 9).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#8fd48a', roughness: 1, polygonOffset: true, polygonOffsetFactor: -1 }), cx - 12, 0.03, cz - 6, false);
-    ground.receiveShadow = true;
-    scene.add(ground);
-    for (const sx of [-1, 1]) {
-      for (const sz of [-1.6, 1.6]) scene.add(mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.6, 6), std('#f8fafc'), cx - 12 + sx * 8, 0.8, cz - 6 + sz));
-    }
-    const trees = scatter(I, 26, rng, 8, I.r - 3, (x, z) => clearPath(I)(x, z) || Math.hypot(x - lake.x, z - lake.z) < lake.r + 2 || (Math.abs(x - cx + 12) < 10 && Math.abs(z - cz + 6) < 6));
-    forestTrees(scene, trees, circle, ['#2f8f4e', '#3a9d55', '#4caf6a']);
+  manipur(scene, W, I, circle, rng, quality, interact) {
+    // the calendar ring, the Sagol Kangjei statue, the polo ground and Loktak lake live in manipur.js
+    buildManipur(scene, W, I, circle, interact, rng);
   },
 
   forest(scene, W, I, circle, rng) {
@@ -437,24 +410,6 @@ function palm(scene, circle, x, z, rng) {
   }
   scene.add(g);
   circle(x, z, 0.3, 5);
-}
-
-function sangai(x, z) {
-  const g = new THREE.Group();
-  g.position.set(x, 0, z);
-  g.rotation.y = 1.2;
-  const fur = std('#8b5a2b'), dark = std('#3f2a1a');
-  g.add(mesh(new THREE.CapsuleGeometry(0.42, 1.1, 4, 8), fur, 0, 1.25, 0).rotateZ(Math.PI / 2));
-  for (const [lx, lz] of [[0.5, 0.2], [0.5, -0.2], [-0.5, 0.2], [-0.5, -0.2]]) g.add(mesh(new THREE.CylinderGeometry(0.07, 0.06, 1, 6), dark, lx, 0.5, lz));
-  g.add(mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.7, 6), fur, 0.85, 1.65, 0).rotateZ(-0.6));
-  const head = mesh(new THREE.ConeGeometry(0.2, 0.6, 6), fur, 1.25, 1.95, 0);
-  head.rotation.z = -Math.PI / 2;
-  g.add(head);
-  for (const s of [-1, 1]) {
-    // the brow-tines curve forward over the eyes — the Sangai's signature antlers
-    g.add(mesh(new THREE.TorusGeometry(0.35, 0.03, 4, 12, Math.PI * 1.1), dark, 1.05, 2.3, s * 0.15).rotateY(Math.PI / 2));
-  }
-  return g;
 }
 
 function fireflies(scene, W, I, rng, color) {

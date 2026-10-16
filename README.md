@@ -34,19 +34,21 @@ Six outer islands float around Cloud Island. Each unlocks at a level (points com
 
 | Island | Reached by | Unlocks | Adventure |
 | --- | --- | --- | --- |
-| 🏇 Manipur Island | 🚆 Train from the east station | LV 3 | Manipur heritage: Sagol Kangjei, a 3D Meitei calendar, Loktak Lake (next update) |
+| 🏇 Manipur Island | 🚆 Train from the east station | LV 3 | A 3D Meitei calendar ring (month names in Meitei Mayek + English, festivals, a moon cycling through its phases), the story of Sagol Kangjei at a bronze polo rider, a playable pony-polo ground, and a Loktak-style lake with phumdis and a Sangai |
 | 🌲 Forest Island | 🌿 Living root bridge (west) | LV 4 | Machine learning in the field (coming) |
 | 🏜️ Desert Island | 🛣️ Road bridge (north-east) | LV 6 | Algorithms (coming) |
 | 🌊 Water Island | 🚡 Cable car (south) | LV 8 | Networking (coming) |
 | 🏙️ City Island | 🚆 Train from the north station | LV 10 | Learn by building a cloud city (coming) |
 | 🗿 Mysterious Island | 🌫️ Hidden stone bridge from Forest Island | LV 12 + a riddle | Cybersecurity escape (coming) |
 
-**Micro-certifications:** 15 certifications are earned automatically (9 are available now; the rest arrive with each island's adventure). Open them with the 🎓 button or `K`. Each one downloads as a PNG certificate with the visitor's name, date and a certificate ID. Earning 10 unlocks the Grand Certificate. The certificates state clearly that they are interactive-learning awards, not accredited qualifications. Definitions live in [`js/certs.js`](js/certs.js), and the islands in [`js/archipelago.js`](js/archipelago.js).
+**Micro-certifications:** 15 certifications are earned automatically (10 are available now, including Manipur Heritage; the rest arrive with each island's adventure). Open them with the 🎓 button or `K`. Each one downloads as a PNG certificate with the visitor's name, date and a certificate ID. Earning 10 unlocks the Grand Certificate. The certificates state clearly that they are interactive-learning awards, not accredited qualifications. Definitions live in [`js/certs.js`](js/certs.js), the islands in [`js/archipelago.js`](js/archipelago.js), and Manipur Island in [`js/manipur.js`](js/manipur.js).
+
+**Manipur Island sources:** month and weekday names in Meitei Mayek and the festival days follow Wikipedia's *Meitei calendar* article. The calendar is lunar, so the Gregorian spans shown are approximate and shift each year. The Sagol Kangjei story follows Wikipedia's *Sagol Kangjei* and *Marjing Polo Statue* articles. Meitei Mayek text uses Google's Noto Sans Meetei Mayek font.
 
 Game features:
 - An optional explorer name (or Guest) on the start screen. It shows on the HUD, as a tag above the robot, and in messages. It's stored only in the visitor's browser and can be changed in Help (`H`).
 - A points counter, levels and titles
-- 16 challenges (8 activities, 3 Brain Arena challenges and 5 lessons), each with a celebration (confetti, fireworks, fanfare) when completed:
+- 19 challenges (8 activities, 3 Brain Arena challenges, 5 lessons and 3 on Manipur Island), each with a celebration (confetti, fireworks, fanfare) when completed:
   - ride the bicycle 150 m
   - jump the stunt ramp on the motorbike
   - shoot 3 baskets
@@ -58,6 +60,9 @@ Game features:
   - solve 3 maths and 3 programming puzzles
   - solve the flying Rubik's Cube
   - finish each of the 5 AI Learning Lab lessons
+  - walk all 12 months of the Meitei calendar
+  - finish the Sagol Kangjei story and quiz
+  - score 3 goals in pony polo
 - Bonus points pop up for orbs, gems, baskets, stunts and new zones
 - Quests: 13 zones and 7 Skill Orbs
 - 7 achievements, including "Island Champion" (every challenge) and "Speedcuber" (a full 20-move scramble)
@@ -108,7 +113,7 @@ Three.js loads from jsDelivr (pinned to `three@0.170.0`) and fonts from Google F
 
 Rubik's Cube: `U` `D` `L` `R` `F` `B` turn a face clockwise, `Shift` + letter turns it back, `Ctrl+Z` undo, `Esc` exit. The on-screen buttons do the same.
 
-Riding: `W`/`S` throttle and brake · `A`/`D` steer · `Shift` boost · `E` get off. Basketball: take a ball from the rack, face the hoop, press `E` to shoot.
+Riding: `W`/`S` throttle and brake · `A`/`D` steer · `Shift` boost · `E` get off. On the pony, `Space` swings the polo mallet. Basketball: take a ball from the rack, face the hoop, press `E` to shoot.
 
 On phones: a joystick to move, drag to look, and buttons for jump and interact.
 

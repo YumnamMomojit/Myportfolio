@@ -73,6 +73,11 @@ export function createActivities(ctx) {
     player.pos.x = car.it.x;
     player.pos.z = car.it.z;
     player.mount(kind, car.v.group.rotation.y);
+    if (kind === 'pony') {
+      sound.neigh();
+      ctx.toast('On the Manipuri pony!', 'W/S speed · A/D steer · Space swing the mallet · E get off', '🏇');
+      return;
+    }
     kind === 'bicycle' ? sound.bell() : sound.engineStart();
     ctx.toast(kind === 'bicycle' ? 'On the bicycle!' : 'Vroom! On the motorbike', 'W/S throttle · A/D steer · Shift boost · E get off', kind === 'bicycle' ? '🚲' : '🏍️');
   }
@@ -438,6 +443,10 @@ export function createActivities(ctx) {
     progress,
     isDone,
     update,
+    // vehicles parked elsewhere in the world (e.g. the pony on Manipur Island)
+    registerVehicle(kind, group, it) {
+      vehicles.push({ kind, v: { group }, it });
+    },
     // returns true when the id belongs to an activity (and handles it)
     interact(id) {
       if (id.startsWith('ride:')) { mount(id.slice(5)); return true; }

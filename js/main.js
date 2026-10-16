@@ -13,6 +13,7 @@ import { createLessons } from './lessons.js';
 import { createPuzzles } from './puzzles.js';
 import { ARENA } from './arena.js';
 import { ISLANDS, checkRiddle, RIDDLE_TEXT } from './archipelago.js';
+import { createManipurGame, monthPanel, calendarPanel } from './manipur.js';
 import { CERTS, GRAND_NEEDS, checkCerts, certCode, renderCertificate, downloadCanvas, certsPanelHTML } from './certs.js';
 import { esc } from './utils.js';
 import * as UI from './ui.js';
@@ -24,7 +25,7 @@ const isTouch = matchMedia('(pointer: coarse)').matches;
 // ------------------------------------------------------------------ persistence
 const SAVE_KEY = 'cloud-island-progress-v1';
 const SETTINGS_KEY = 'cloud-island-settings-v1';
-const freshState = () => ({ xp: 0, visited: [], orbs: [], opened: [], achievements: [], tasks: {}, done: [], gems: [], puzzles: [], islands: [], riddles: [], certs: [] });
+const freshState = () => ({ xp: 0, visited: [], orbs: [], opened: [], achievements: [], tasks: {}, done: [], gems: [], puzzles: [], islands: [], riddles: [], certs: [], calendar: [] });
 function load(key, fallback) {
   try {
     const v = JSON.parse(localStorage.getItem(key));
@@ -98,6 +99,7 @@ try {
       document.fonts.load("500 36px 'Space Grotesk'"),
       document.fonts.load("500 32px 'JetBrains Mono'"),
       document.fonts.load("700 44px 'JetBrains Mono'"),
+      document.fonts.load("700 64px 'Noto Sans Meetei Mayek'", 'ꯁꯖꯤꯕꯨ'),
     ]),
     new Promise((r) => setTimeout(r, 2500)),
   ]);
@@ -203,6 +205,16 @@ const A = createActivities({
       }, 2800);
     }
   },
+});
+
+// Manipur Island: calendar stones, the pony and the polo ball
+A.registerVehicle('pony', W.manipur.pony.group, W.manipur.pony.it);
+const manipur = createManipurGame({
+  W, player, sound, bursts, reward,
+  state: () => state,
+  toast: (title, sub, icon) => UI.toast(title, sub, 'info', icon),
+  progress: (id, v) => A.progress(id, v),
+  add: (id, n = 1) => A.progress(id, (state.tasks[id] || 0) + n),
 });
 
 // ------------------------------------------------------------------ explorer name
@@ -475,7 +487,9 @@ function openIsle(id) {
     kicker: `${I.icon} Island · unlocks at LV ${I.req}`, title: I.name, color: I.color,
     html: `<p class="lead">${esc(I.topic)}.</p>
       <p>Reach it by <b>${esc(I.via)}</b>. ${lvl >= I.req ? '✅ Unlocked for you.' : `🔒 You are LV ${lvl}.`}</p>
-      <div class="callout">🚧 This island's full learning adventure — with its own micro-certification — arrives in an upcoming update. Explore it now and come back soon!</div>`,
+      ${I.id === 'manipur'
+        ? `<div class="callout">🗓️ Walk the 12 stones of the <b>Meitei calendar</b> (Meitei Mayek + English) · 📜 hear the story of <b>Sagol Kangjei</b> at the bronze polo rider · 🏇 ride the pony and score 3 goals. Finish them (and visit Thoubal on the India map) to earn the <b>Manipur Heritage</b> certificate.</div>`
+        : `<div class="callout">🚧 This island's full learning adventure — with its own micro-certification — arrives in an upcoming update. Explore it now and come back soon!</div>`}`,
   });
   sound.open();
 }
@@ -538,6 +552,17 @@ function openPanel(id) {
   }
   if (id.startsWith('isle:')) return openIsle(id.slice(5));
   if (id === 'riddle:mystery') return openRiddle();
+  if (id === 'calendar' || id.startsWith('month:')) {
+    lessons.onClose();
+    puzzles.close();
+    if (!state.opened.includes('calendar')) {
+      state.opened.push('calendar');
+      grantXP(25);
+    }
+    UI.showRawPanel(id === 'calendar' ? calendarPanel(state.calendar) : monthPanel(+id.slice(6)));
+    sound.open();
+    return;
+  }
   lessons.onClose();
   puzzles.close();
   if (id === 'secret' && W.chest) W.chest.open = true;
@@ -926,6 +951,7 @@ const events = {
     }
   },
   rampLaunch: () => sound.whoosh(),
+  vehicleAction: () => manipur.swing(),
   bounce: () => {
     sound.bounce();
     bursts.spawn(player.pos.clone().setY(0.4), '#5eead4', 26, 5, { up: 6 });
@@ -1022,6 +1048,7 @@ function updateGame(dt) {
   else player.update(dt, input, camYaw, W, events);
   input.jump = false;
   A.update(dt, t);
+  manipur.update(dt);
   const p = player.pos;
 
   if (player.onGround && player.speed > 9 && p.y < 0.5) {
