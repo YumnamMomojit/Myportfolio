@@ -28,6 +28,21 @@ The AI Learning Lab lessons:
 | Neural Networks | A live 2-2-1 network that solves XOR, plus how backpropagation works |
 | Convolutional Networks | Draw on a pixel grid and run edge, outline and blur filters to see feature maps |
 
+## The archipelago
+
+Six outer islands float around Cloud Island. Each unlocks at a level (points come from exploring, playing and learning):
+
+| Island | Reached by | Unlocks | Adventure |
+| --- | --- | --- | --- |
+| 🏇 Manipur Island | 🚆 Train from the east station | LV 3 | Manipur heritage: Sagol Kangjei, a 3D Meitei calendar, Loktak Lake (next update) |
+| 🌲 Forest Island | 🌿 Living root bridge (west) | LV 4 | Machine learning in the field (coming) |
+| 🏜️ Desert Island | 🛣️ Road bridge (north-east) | LV 6 | Algorithms (coming) |
+| 🌊 Water Island | 🚡 Cable car (south) | LV 8 | Networking (coming) |
+| 🏙️ City Island | 🚆 Train from the north station | LV 10 | Learn by building a cloud city (coming) |
+| 🗿 Mysterious Island | 🌫️ Hidden stone bridge from Forest Island | LV 12 + a riddle | Cybersecurity escape (coming) |
+
+**Micro-certifications:** 15 certifications are earned automatically (9 are available now; the rest arrive with each island's adventure). Open them with the 🎓 button or `K`. Each one downloads as a PNG certificate with the visitor's name, date and a certificate ID. Earning 10 unlocks the Grand Certificate. The certificates state clearly that they are interactive-learning awards, not accredited qualifications. Definitions live in [`js/certs.js`](js/certs.js), and the islands in [`js/archipelago.js`](js/archipelago.js).
+
 Game features:
 - An optional explorer name (or Guest) on the start screen. It shows on the HUD, as a tag above the robot, and in messages. It's stored only in the visitor's browser and can be changed in Help (`H`).
 - A points counter, levels and titles

@@ -5,7 +5,6 @@ const GRAVITY = 30;
 const WALK = 7;
 const SPRINT = 12.5;
 const JUMP = 11;
-const WALK_SAFE = 56;
 
 function part(geo, mat, x = 0, y = 0, z = 0) {
   const m = new THREE.Mesh(geo, mat);
@@ -311,7 +310,7 @@ export class Player {
 
     // remember a safe spot on the main island for respawns
     this.safeTimer -= dt;
-    if (this.onGround && p.y === 0 && this.safeTimer <= 0 && Math.hypot(p.x, p.z) < WALK_SAFE) {
+    if (this.onGround && p.y === 0 && this.safeTimer <= 0 && world.isSafe(p.x, p.z)) {
       this.lastSafe.copy(p);
       this.safeTimer = 0.4;
     }

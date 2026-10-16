@@ -310,6 +310,8 @@ export function updateHUD(state, totals) {
     { label: 'Discover every zone', n: state.visited.length, of: totals.zones },
     { label: 'Collect Skill Orbs', n: state.orbs.length, of: totals.orbs },
     { label: 'Unlock achievements', n: state.achievements.length, of: totals.achievements },
+    { label: 'Explore the islands', n: (state.islands || []).length, of: totals.islands },
+    { label: 'Earn micro-certificates', n: (state.certs || []).length, of: 10 },
   ];
   const done = new Set(state.done || []);
   $('#task-list').innerHTML = TASKS.map((t) => {
@@ -489,31 +491,67 @@ function confetti(n) {
 
 export function drawMap(ctx, size, data, { big = false } = {}) {
   const { zones, orbs, player, yaw, islandR, sky } = data;
-  const s = (size / 2 - (big ? 24 : 8)) / islandR;
+  // the minimap frames Cloud Island, or follows you around the archipelago; the big map shows everything
+  const onMain = Math.hypot(player.x, player.z) < islandR + 6;
+  const center = big || onMain ? { x: 0, z: 0 } : { x: player.x, z: player.z };
+  const range = big ? 215 : onMain ? islandR : 80;
+  const s = (size / 2 - (big ? 20 : 8)) / range;
   const cx = size / 2, cy = size / 2;
-  const X = (x) => cx + x * s, Y = (z) => cy + z * s;
+  const X = (x) => cx + (x - center.x) * s, Y = (z) => cy + (z - center.z) * s;
   ctx.clearRect(0, 0, size, size);
-
-  ctx.fillStyle = 'rgba(8,13,30,0.55)';
+  ctx.save();
   ctx.beginPath();
   ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.clip();
+  ctx.fillStyle = 'rgba(8,13,30,0.6)';
+  ctx.fillRect(0, 0, size, size);
+
+  // bridges, train lines and the cable car
+  for (const [ax, az, bx, bz, col] of data.links || []) {
+    ctx.strokeStyle = col;
+    ctx.lineWidth = big ? 3 : 2;
+    ctx.setLineDash(col.startsWith('#f87171') || col.startsWith('#38bdf8') ? [5, 4] : []);
+    ctx.beginPath();
+    ctx.moveTo(X(ax), Y(az));
+    ctx.lineTo(X(bx), Y(bz));
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // outer islands
+  for (const I of data.islands || []) {
+    ctx.globalAlpha = I.locked ? 0.45 : 1;
+    ctx.fillStyle = I.color;
+    ctx.beginPath();
+    ctx.arc(X(I.x), Y(I.z), I.r * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    if (big || I.r * s > 14) {
+      ctx.font = `600 ${big ? 13 : 10}px "Space Grotesk", sans-serif`;
+      ctx.fillStyle = '#f8fafc';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${I.locked ? '🔒 ' : ''}${I.icon} ${I.name}`, X(I.x), Y(I.z) + 4);
+    }
+  }
+
+  // Cloud Island itself
   ctx.fillStyle = '#4f8f5a';
   ctx.beginPath();
-  ctx.arc(cx, cy, islandR * s, 0, Math.PI * 2);
+  ctx.arc(X(0), Y(0), islandR * s, 0, Math.PI * 2);
   ctx.fill();
   ctx.strokeStyle = 'rgba(255,255,255,0.35)';
   ctx.lineWidth = 1.5;
   ctx.stroke();
-
-  ctx.strokeStyle = 'rgba(236,220,174,0.75)';
-  ctx.lineWidth = big ? 6 : 3;
-  for (const z of zones) {
-    if (z.id === 'skills') continue;
-    ctx.beginPath();
-    ctx.moveTo(X(0), Y(z.id === 'about' ? 40 : 0));
-    ctx.lineTo(X(z.x), Y(z.z));
-    ctx.stroke();
+  if (!big) {
+    ctx.strokeStyle = 'rgba(236,220,174,0.75)';
+    ctx.lineWidth = 3;
+    for (const z of zones) {
+      if (z.id === 'skills') continue;
+      ctx.beginPath();
+      ctx.moveTo(X(0), Y(z.id === 'about' ? 40 : 0));
+      ctx.lineTo(X(z.x), Y(z.z));
+      ctx.stroke();
+    }
   }
   if (data.india) {
     ctx.fillStyle = '#c9b27c';
@@ -526,7 +564,7 @@ export function drawMap(ctx, size, data, { big = false } = {}) {
     if (data.home) {
       ctx.fillStyle = '#fb923c';
       ctx.beginPath();
-      ctx.arc(X(data.home.x), Y(data.home.z), big ? 4 : 2, 0, Math.PI * 2);
+      ctx.arc(X(data.home.x), Y(data.home.z), big ? 2.5 : 2, 0, Math.PI * 2);
       ctx.fill();
     }
   }
@@ -534,25 +572,24 @@ export function drawMap(ctx, size, data, { big = false } = {}) {
   ctx.beginPath();
   ctx.arc(X(sky.x), Y(sky.z), sky.r * s, 0, Math.PI * 2);
   ctx.fill();
-
   for (const z of zones) {
     ctx.fillStyle = z.color;
     ctx.globalAlpha = z.visited ? 1 : 0.55;
     ctx.beginPath();
-    ctx.arc(X(z.x), Y(z.z), big ? 9 : 4.5, 0, Math.PI * 2);
+    ctx.arc(X(z.x), Y(z.z), big ? 3.5 : 4.5, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
-    if (big) {
-      ctx.font = '600 13px "Space Grotesk", sans-serif';
-      ctx.fillStyle = '#f8fafc';
-      ctx.textAlign = 'center';
-      ctx.fillText(z.name, X(z.x), Y(z.z) - 15);
-    }
+  }
+  if (big) {
+    ctx.font = '700 14px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#f8fafc';
+    ctx.textAlign = 'center';
+    ctx.fillText('☁️ Cloud Island', X(0), Y(0) + 4);
   }
   for (const o of orbs) {
     ctx.fillStyle = o.color;
     ctx.beginPath();
-    const r = big ? 4 : 2.2;
+    const r = big ? 2.5 : 2.2;
     ctx.moveTo(X(o.x), Y(o.z) - r * 1.4);
     ctx.lineTo(X(o.x) + r, Y(o.z));
     ctx.lineTo(X(o.x), Y(o.z) + r * 1.4);
@@ -563,7 +600,7 @@ export function drawMap(ctx, size, data, { big = false } = {}) {
   ctx.save();
   ctx.translate(X(player.x), Y(player.z));
   ctx.rotate(-yaw + Math.PI);
-  const a = big ? 11 : 7;
+  const a = big ? 10 : 7;
   ctx.fillStyle = '#ffffff';
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 2;
@@ -575,6 +612,7 @@ export function drawMap(ctx, size, data, { big = false } = {}) {
   ctx.closePath();
   ctx.stroke();
   ctx.fill();
+  ctx.restore();
   ctx.restore();
 }
 

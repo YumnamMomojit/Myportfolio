@@ -6,6 +6,7 @@ import { std, glowMat, mesh, beam, jitter, groundDisc, glowRing, waterTime, ocea
 import { buildNature, FALLS, SNOW } from './nature.js';
 import { buildLab } from './lab.js';
 import { buildArena } from './arena.js';
+import { buildArchipelago, STATIONS } from './archipelago.js';
 
 export const ISLAND_R = 64;
 export const WALK_R = 62.6;
@@ -40,6 +41,8 @@ const NO_TREES = [
   [13, 47, 34, 47, 3.5], // stunt ramp run-up
   [5, 28, 5, 28, 2.5], // challenge board
   [SNOW.x, SNOW.z, SNOW.x, SNOW.z, 13],
+  // stations and bridgeheads to the other islands
+  ...Object.values(STATIONS).map(([x, z]) => [x, z, x * 1.2, z * 1.2, 5]),
 ];
 const CRATES = [
   ['EC2', 8, 6], ['S3', 9.8, 7.4], ['Lambda', 8.4, 8.9], ['VPC', 7, -10], ['ECS', 8.6, -11.2], ['IAM', -11, -9],
@@ -53,6 +56,8 @@ export function buildWorld(scene, { quality = 'high' } = {}) {
     colliders: [],
     platforms: [SKY_ISLAND],
     polyPlatforms: [],
+    isles: [{ id: 'main', x: 0, z: 0, r: WALK_R }],
+    decks: [],
     lakes: [],
     ramps: [],
     ice: [],
@@ -74,9 +79,20 @@ export function buildWorld(scene, { quality = 'high' } = {}) {
 
   W.groundAt = (x, z, y = 0) => {
     let g = -Infinity;
-    if (x * x + z * z < WALK_R * WALK_R) {
-      g = 0;
-      for (const l of W.lakes) if (inCircle(l, x, z)) g = l.depth;
+    for (const s of W.isles) {
+      if ((x - s.x) ** 2 + (z - s.z) ** 2 < s.r * s.r) {
+        g = 0;
+        for (const l of W.lakes) if (inCircle(l, x, z)) g = l.depth;
+        break;
+      }
+    }
+    for (const d of W.decks) {
+      if (!d.enabled) continue;
+      const rx = x - d.ax, rz = z - d.az;
+      const t = (rx * d.dx + rz * d.dz) / d.len;
+      if (t < 0 || t > 1 || Math.abs(-rx * d.dz + rz * d.dx) > d.w / 2) continue;
+      const h = d.h(t);
+      if (y >= h - 0.75) g = Math.max(g, h);
     }
     for (const r of W.ramps) {
       const h = rampHeight(r, x, z);
@@ -116,6 +132,19 @@ export function buildWorld(scene, { quality = 'high' } = {}) {
         const dx = p.x - c.x, dz = p.z - c.z;
         const R = c.r + r;
         const d2 = dx * dx + dz * dz;
+        if (d2 < R * R) {
+          const d = Math.sqrt(d2) || 1e-4;
+          p.x += (dx / d) * (R - d);
+          p.z += (dz / d) * (R - d);
+          hit = true;
+        }
+      } else if (c.type === 'seg') {
+        // a thin wall along a line (bridge railings, gates)
+        if (c.enabled === false) continue;
+        const vx = c.bx - c.ax, vz = c.bz - c.az;
+        const t = Math.max(0, Math.min(1, ((p.x - c.ax) * vx + (p.z - c.az) * vz) / (vx * vx + vz * vz)));
+        const dx = p.x - (c.ax + vx * t), dz = p.z - (c.az + vz * t);
+        const R = c.r + r, d2 = dx * dx + dz * dz;
         if (d2 < R * R) {
           const d = Math.sqrt(d2) || 1e-4;
           p.x += (dx / d) * (R - d);
@@ -203,6 +232,7 @@ export function buildWorld(scene, { quality = 'high' } = {}) {
   sun.shadow.normalBias = 0.04;
   scene.add(sun, sun.target);
   W.sun = sun;
+  W.sunDir = sunDir;
 
   // ---------- island ----------
   const grass = mesh(new THREE.CylinderGeometry(ISLAND_R, ISLAND_R - 0.4, 0.8, 72), std('#78c27b'), 0, -0.4, 0);
@@ -288,6 +318,7 @@ export function buildWorld(scene, { quality = 'high' } = {}) {
   W.spots = buildNature(scene, W, circle, quality);
   buildLab(scene, W, circle, interact);
   buildArena(scene, W, circle, interact);
+  buildArchipelago(scene, W, circle, interact, quality);
   W.updaters.push((t) => (waterTime.value = t));
 
   // zone labels
@@ -1014,7 +1045,7 @@ function buildScenery(scene, W, rng, circle, quality) {
   // distant floating islets
   for (let i = 0; i < 7; i++) {
     const a = (i / 7) * Math.PI * 2 + rng() * 0.5;
-    const r = 120 + rng() * 70;
+    const r = 280 + rng() * 80; // far beyond the archipelago
     const s = 3 + rng() * 5;
     const g = new THREE.Group();
     g.position.set(Math.sin(a) * r, -6 + rng() * 22, Math.cos(a) * r);

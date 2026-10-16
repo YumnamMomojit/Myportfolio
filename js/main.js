@@ -12,6 +12,9 @@ import { dampAngle, makeLabel } from './utils.js';
 import { createLessons } from './lessons.js';
 import { createPuzzles } from './puzzles.js';
 import { ARENA } from './arena.js';
+import { ISLANDS, checkRiddle, RIDDLE_TEXT } from './archipelago.js';
+import { CERTS, GRAND_NEEDS, checkCerts, certCode, renderCertificate, downloadCanvas, certsPanelHTML } from './certs.js';
+import { esc } from './utils.js';
 import * as UI from './ui.js';
 
 const $ = (s) => document.querySelector(s);
@@ -21,7 +24,7 @@ const isTouch = matchMedia('(pointer: coarse)').matches;
 // ------------------------------------------------------------------ persistence
 const SAVE_KEY = 'cloud-island-progress-v1';
 const SETTINGS_KEY = 'cloud-island-settings-v1';
-const freshState = () => ({ xp: 0, visited: [], orbs: [], opened: [], achievements: [], tasks: {}, done: [], gems: [], puzzles: [] });
+const freshState = () => ({ xp: 0, visited: [], orbs: [], opened: [], achievements: [], tasks: {}, done: [], gems: [], puzzles: [], islands: [], riddles: [], certs: [] });
 function load(key, fallback) {
   try {
     const v = JSON.parse(localStorage.getItem(key));
@@ -50,7 +53,7 @@ const ACHIEVEMENTS = {
   champion: ['Island Champion', 'Completed every challenge', '🏆'],
   cubemaster: ['Speedcuber', 'Solved a full 20-move scramble', '🧊'],
 };
-const TOTALS = { zones: ZONES.length, orbs: SKILLS.length, achievements: Object.keys(ACHIEVEMENTS).length, tasks: TASKS.length };
+const TOTALS = { zones: ZONES.length, orbs: SKILLS.length, achievements: Object.keys(ACHIEVEMENTS).length, tasks: TASKS.length, islands: ISLANDS.length };
 
 // ------------------------------------------------------------------ renderer
 let renderer;
@@ -349,6 +352,8 @@ if (new URLSearchParams(location.search).has('debug')) window.__island = {
   player, W, A, get state() { return state; },
   // advance the simulation by `sec` seconds at 60 fps (hidden tabs don't animate)
   step(sec) { for (let i = 0; i < Math.round(sec * 60); i++) tick(1 / 60); render(); },
+  grant: (n) => grantXP(n),
+  board: (id, end) => board(id, end),
   get keys() { return keys; },
   get camYaw() { return camYaw; },
   set camYaw(v) { camYaw = v; },
@@ -366,9 +371,124 @@ function grantXP(n) {
     UI.toast(`Level up! LV ${after}`, `New title: ${UI.levelTitle(after)}`, 'level', '⬆');
     sound.level();
     bursts.spawn(player.pos.clone().add(new THREE.Vector3(0, 1.2, 0)), '#fbbf24', 24, 5, { up: 4 });
+    for (const I of ISLANDS) {
+      if (I.req > before && I.req <= after) setTimeout(() => UI.toast(`🔓 ${I.name} unlocked!`, `Travel there by ${I.via}`, 'achieve', I.icon), 1400);
+    }
+    W.setLevel(after, state);
   }
+  awardCerts();
   persist();
   UI.updateHUD(state, TOTALS);
+}
+
+// micro-certifications are earned automatically; ten unlock the Grand Certificate
+let awarding = false;
+function awardCerts() {
+  if (awarding) return;
+  awarding = true;
+  const had = (state.certs || []).length;
+  const fresh = checkCerts(state, { zones: ZONES.length });
+  for (const c of fresh) {
+    UI.celebrate({ icon: c.icon, title: `Micro-certification: ${c.title}`, pts: 200, who: settings.explorer });
+    sound.achieve();
+  }
+  if (fresh.length) {
+    grantXP(200 * fresh.length);
+    if (had < GRAND_NEEDS && state.certs.length >= GRAND_NEEDS) {
+      UI.celebrate({ icon: '🎓', title: 'Grand Certificate unlocked! Download it from 🎓 Certificates', pts: 0, big: true, who: settings.explorer });
+      fireworks(12, 8);
+    } else UI.toast('Certificate ready to download', 'Open 🎓 Certificates (key K)', 'info', '📜');
+  }
+  awarding = false;
+}
+
+const certName = () => settings.certName || settings.explorer || '';
+function openCerts() {
+  lessons.onClose();
+  puzzles.close();
+  UI.showRawPanel({ kicker: 'Cloud Island Academy', title: '🎓 Your certificates', color: '#fbbf24', html: certsPanelHTML(state, certName()) });
+  sound.open();
+}
+function downloadCert(id) {
+  const name = certName();
+  if (!name) return openCerts();
+  if (id === 'grand') {
+    const list = CERTS.filter((c) => state.certs.some((x) => x.id === c.id));
+    const date = new Date().toISOString().slice(0, 10);
+    downloadCanvas(renderCertificate({ name, date, code: certCode(name, 'grand', date), grand: true, list }), `Cloud-Island-Grand-Certificate-${name.replace(/\s+/g, '-')}.png`);
+  } else {
+    const rec = state.certs.find((x) => x.id === id);
+    const cert = CERTS.find((c) => c.id === id);
+    downloadCanvas(renderCertificate({ name, cert, date: rec.date, code: certCode(name, id, rec.date) }), `Cloud-Island-${cert.title.replace(/\W+/g, '-')}-${name.replace(/\s+/g, '-')}.png`);
+  }
+  UI.toast('Certificate downloaded', name, 'info', '📜');
+}
+
+// ------------------------------------------------------------------ trains & cable car
+let ride = null;
+const seatTmp = new THREE.Vector3();
+function board(trId, end) {
+  const tr = W.transports[trId];
+  const lvl = UI.levelOf(state.xp);
+  if (lvl < tr.req) {
+    UI.toast(`Locked until LV ${tr.req}`, `You're LV ${lvl} — earn points by exploring, playing and learning`, 'info', '🔒');
+    sound.thud();
+    return;
+  }
+  if (player.vehicle) A.action();
+  if (cubeMode) exitCube();
+  tr.at = end;
+  tr.place(end, end === 1);
+  ride = { tr, from: end, t: 0 };
+  sound.bell();
+  UI.toast(tr.kind === 'cable' ? 'Cable car departing…' : 'All aboard!', `Next stop: ${tr.names[1 - end]}`, 'info', tr.kind === 'cable' ? '🚡' : '🚆');
+}
+function updateRide(dt) {
+  const { tr, from } = ride;
+  ride.t = Math.min(1, ride.t + dt / tr.dur);
+  const e = ride.t * ride.t * (3 - 2 * ride.t);
+  tr.place(from === 0 ? e : 1 - e, from === 1);
+  tr.seatWorld(seatTmp);
+  player.pos.copy(seatTmp);
+  player.vel.set(0, 0, 0);
+  player.onGround = true;
+  player.yaw = tr.heading;
+  player.animate(0);
+  player.sync();
+  sound.engine(Math.sin(Math.PI * ride.t) * 14);
+  if (ride.t >= 1) {
+    const ex = tr.exits[1 - from];
+    tr.at = 1 - from;
+    ride = null;
+    sound.engineStop();
+    player.place(ex.x, 0, ex.z, ex.yaw);
+    camTarget.copy(player.pos).y += 1.5;
+    bursts.spawn(player.pos.clone().setY(1), '#5eead4', 14, 3, { up: 2 });
+  }
+}
+
+// island info + riddle panels
+function openIsle(id) {
+  const I = ISLANDS.find((i) => i.id === id);
+  const lvl = UI.levelOf(state.xp);
+  UI.showRawPanel({
+    kicker: `${I.icon} Island · unlocks at LV ${I.req}`, title: I.name, color: I.color,
+    html: `<p class="lead">${esc(I.topic)}.</p>
+      <p>Reach it by <b>${esc(I.via)}</b>. ${lvl >= I.req ? '✅ Unlocked for you.' : `🔒 You are LV ${lvl}.`}</p>
+      <div class="callout">🚧 This island's full learning adventure — with its own micro-certification — arrives in an upcoming update. Explore it now and come back soon!</div>`,
+  });
+  sound.open();
+}
+function openRiddle() {
+  const solved = state.riddles.includes('mystery');
+  UI.showRawPanel({
+    kicker: '🗿 Ancient riddle stone', title: 'The stone speaks…', color: '#c084fc',
+    html: solved
+      ? `<p class="lead">“${esc(RIDDLE_TEXT)}”</p><p class="why">✔ Solved. ${UI.levelOf(state.xp) >= 12 ? 'The hidden bridge has risen.' : 'The bridge will rise once you reach LV 12.'}</p>`
+      : `<p class="lead">“${esc(RIDDLE_TEXT)}”</p><p class="muted">Answer to raise the hidden bridge to the Mysterious Island (it also needs LV 12).</p>
+        <form class="pz-form" data-riddle autocomplete="off"><input name="a" placeholder="Your answer" spellcheck="false" /><button class="btn small primary" type="submit">Speak</button></form>`,
+  });
+  sound.open();
 }
 
 function achieve(key) {
@@ -412,6 +532,12 @@ function openPanel(id) {
     return;
   }
   if (id === 'rubik') return enterCube();
+  if (id.startsWith('travel:')) {
+    const [, trId, end] = id.split(':');
+    return board(trId, +end);
+  }
+  if (id.startsWith('isle:')) return openIsle(id.slice(5));
+  if (id === 'riddle:mystery') return openRiddle();
   lessons.onClose();
   puzzles.close();
   if (id === 'secret' && W.chest) W.chest.open = true;
@@ -467,6 +593,7 @@ addEventListener('keydown', (e) => {
   if (e.code === 'Space' && !e.repeat) input.jump = true;
   if ((e.code === 'KeyE' || e.code === 'Enter') && !e.repeat) doAction();
   if (e.code === 'KeyH' || e.key === '?') UI.openOverlay($('#help'));
+  if (e.code === 'KeyK') openCerts();
   if (e.code === 'KeyC') UI.openOverlay($('#classic'));
   keys.add(e.code);
 });
@@ -592,11 +719,33 @@ $('#prompt').addEventListener('click', doAction);
 // ------------------------------------------------------------------ overlays & toolbar
 $('#panel-close').addEventListener('click', closeOverlay);
 document.addEventListener('submit', (e) => {
-  if (puzzles.handleSubmit(e.target)) e.preventDefault();
+  if (puzzles.handleSubmit(e.target)) return e.preventDefault();
+  if (e.target.matches('[data-riddle]')) {
+    e.preventDefault();
+    if (checkRiddle(e.target.elements.a.value)) {
+      state.riddles.push('mystery');
+      W.setLevel(UI.levelOf(state.xp), state);
+      sound.gem();
+      UI.toast('The riddle is solved!', UI.levelOf(state.xp) >= 12 ? 'Listen… the stone bridge is rising.' : 'The bridge will rise when you reach LV 12.', 'achieve', '🗿');
+      grantXP(150);
+      openRiddle();
+    } else {
+      sound.thud();
+      UI.toast('The stone stays silent', 'Think about what you leave behind as you walk…', 'info', '🗿');
+    }
+  }
+  if (e.target.matches('[data-cert-name]')) {
+    e.preventDefault();
+    settings.certName = cleanName(e.target.elements.n.value).slice(0, 40);
+    save(SETTINGS_KEY, settings);
+    openCerts();
+  }
 });
 document.addEventListener('click', (e) => {
   if (lessons.handleClick(e.target)) return;
   if (puzzles.handleClick(e.target)) return;
+  const dl = e.target.closest('[data-cert-dl]');
+  if (dl) return downloadCert(dl.dataset.certDl);
   const cb = e.target.closest('[data-cube]');
   if (cb) return cubeAction(cb.dataset.cube);
   const open = e.target.closest('[data-open]');
@@ -625,14 +774,39 @@ function toggleMap() {
   else { renderMapList(); UI.openOverlay($('#map')); }
 }
 function renderMapList() {
+  const lvl = UI.levelOf(state.xp);
+  const isles = ISLANDS.map((I) => {
+    const locked = lvl < I.req || (I.id === 'mystery' && !state.riddles.includes('mystery'));
+    return `<li><button class="travel ${locked ? 'locked' : ''}" data-travel="isle:${I.id}" style="--c:${I.color}" ${locked ? 'aria-disabled="true"' : ''}>
+      <span class="dot"></span><span>${I.icon} ${I.name}</span><small>${locked ? `🔒 LV ${I.req}${I.id === 'mystery' ? ' + riddle' : ''}` : state.islands.includes(I.id) ? 'visited' : 'unlocked'}</small></button></li>`;
+  }).join('');
   $('#travel-list').innerHTML = ZONES.map((z) => `<li><button class="travel" data-travel="${z.id}" style="--c:${z.color}">
-    <span class="dot"></span><span>${z.name}</span><small>${state.visited.includes(z.id) ? 'visited' : 'undiscovered'}</small></button></li>`).join('');
+    <span class="dot"></span><span>${z.name}</span><small>${state.visited.includes(z.id) ? 'visited' : 'undiscovered'}</small></button></li>`).join('') +
+    `<li class="travel-head">Islands</li>${isles}`;
 }
 $('#travel-list').addEventListener('click', (e) => {
   const b = e.target.closest('[data-travel]');
   if (b) travelTo(b.dataset.travel);
 });
 function travelTo(id) {
+  if (id.startsWith('isle:')) {
+    const I = ISLANDS.find((i) => i.id === id.slice(5));
+    const lvl = UI.levelOf(state.xp);
+    if (lvl < I.req || (I.id === 'mystery' && !state.riddles.includes('mystery'))) {
+      UI.toast(`${I.name} is locked`, I.id === 'mystery' ? `Reach LV ${I.req} and solve the riddle stone on Forest Island` : `Reach LV ${I.req} to travel there`, 'info', '🔒');
+      return;
+    }
+    const L = Math.hypot(...I.c);
+    const k = I.r * 0.45 - 3; // in front of the island's signboard, facing inland
+    const x = I.c[0] - (I.c[0] / L) * k, zz = I.c[1] - (I.c[1] / L) * k;
+    UI.closeTop();
+    flash();
+    sound.warp();
+    player.place(x, 0, zz, Math.atan2(I.c[0] - x, I.c[1] - zz));
+    camYaw = Math.atan2(-(I.c[0] - x), -(I.c[1] - zz));
+    camTarget.copy(player.pos).y += 1.5;
+    return;
+  }
   const z = ZONES.find((zz) => zz.id === id);
   let x, zz;
   if (id === 'about') { x = 0; zz = 24; }
@@ -660,6 +834,7 @@ function flash() {
 
 $('#btn-map').addEventListener('click', toggleMap);
 $('#btn-help').addEventListener('click', () => UI.openOverlay($('#help')));
+$('#btn-certs').addEventListener('click', openCerts);
 $('#btn-classic').addEventListener('click', () => UI.openOverlay($('#classic')));
 $('#btn-classic-start').addEventListener('click', () => UI.openOverlay($('#classic')));
 $('#btn-sound').addEventListener('click', () => {
@@ -843,7 +1018,8 @@ function updateGame(dt) {
     input.x = input.y = 0;
     input.sprint = input.jump = false;
   }
-  player.update(dt, input, camYaw, W, events);
+  if (ride) updateRide(dt);
+  else player.update(dt, input, camYaw, W, events);
   input.jump = false;
   A.update(dt, t);
   const p = player.pos;
@@ -887,11 +1063,21 @@ function updateGame(dt) {
   if (p.y < 4) {
     for (const z of ZONES) if (Math.hypot(p.x - z.x, p.z - z.z) < z.r) { zone = z; break; }
   }
-  if (zone !== currentZone) {
+  // outer islands
+  const isle = ISLANDS.find((I) => Math.hypot(p.x - I.c[0], p.z - I.c[1]) < I.r);
+  if (isle && !zone) zone = { id: `isle:${isle.id}`, name: `${isle.icon} ${isle.name}`, color: isle.color, island: isle };
+  if (zone !== currentZone && !(zone && currentZone && zone.id === currentZone.id)) {
     currentZone = zone;
     $('#zone-name').textContent = zone ? zone.name : 'Cloud Island';
     $('#zone-name').style.setProperty('--c', zone ? zone.color : '#94a3b8');
-    if (zone) {
+    if (zone?.island && !state.islands.includes(zone.island.id)) {
+      state.islands.push(zone.island.id);
+      UI.zoneBanner(zone.island.name, zone.island.color);
+      sound.zone();
+      UI.toast(`New island: ${zone.island.name}`, zone.island.topic, 'achieve', zone.island.icon);
+      grantXP(150);
+    } else if (zone?.island) UI.zoneBanner(zone.island.name, zone.island.color);
+    if (zone && !zone.island) {
       UI.zoneBanner(zone.name, zone.color);
       if (!state.visited.includes(zone.id)) {
         state.visited.push(zone.id);
@@ -910,7 +1096,7 @@ function updateGame(dt) {
     if (d < it.r && d < bestD) { best = it; bestD = d; }
   }
   nearest = best;
-  const promptText = cubeMode ? null : A.prompt() || best?.label || null;
+  const promptText = cubeMode || ride ? null : A.prompt() || best?.label || null;
   if (cubeMode) {
     const C = W.cube;
     $('#cube-stats').textContent = `${C.moves} moves · ${C.scrambled && C.moves ? fmtTime((performance.now() - C.startedAt) / 1000) : '0:00'}${C.scrambled ? '' : C.isSolved() ? ' · solved ✓' : ''}`;
@@ -966,6 +1152,11 @@ function mapData() {
     player: player.pos,
     yaw: player.yaw,
     islandR: ISLAND_R,
+    islands: ISLANDS.map((I) => ({ x: I.c[0], z: I.c[1], r: I.r, name: I.name, icon: I.icon, color: I.color, locked: UI.levelOf(state.xp) < I.req })),
+    links: [
+      ...W.decks.map((d) => [d.ax, d.az, d.ax + d.dx * d.len, d.az + d.dz * d.len, d.enabled ? '#e7d7a8' : 'rgba(231,215,168,0.3)']),
+      ...Object.values(W.transports).map((tr) => [tr.exits[0].x, tr.exits[0].z, tr.exits[1].x, tr.exits[1].z, tr.kind === 'cable' ? '#38bdf8' : '#f87171']),
+    ],
     india: W.indiaRings,
     home: W.journeyStops?.find((s) => s.home),
     sky: SKY_ISLAND,
@@ -994,6 +1185,9 @@ function tick(dt) {
     sound.water(0);
   }
   for (const u of W.updaters) u(t, dt);
+  W.sun.position.copy(player.pos).addScaledVector(W.sunDir, 90);
+  W.sun.target.position.copy(player.pos);
+  W.sun.target.updateMatrixWorld();
   updateCrates(dt);
   bursts.update(dt);
   updateCamera(dt);
@@ -1043,6 +1237,7 @@ if (innerWidth < 640) $('#quests').classList.add('collapsed'); // keep phones un
 UI.buildClassic();
 applyQuality();
 syncSoundBtn();
+W.setLevel(UI.levelOf(state.xp), state);
 UI.updateHUD(state, TOTALS);
 UI.setExplorer(settings.explorer);
 frame();
