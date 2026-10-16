@@ -180,7 +180,7 @@ export function createDog(ctx) {
   const pouch = () => S().goldFound.length - S().goldSpent;
 
   const D = { pos: new THREE.Vector3(), yaw: 0, speed: 0, mode: 'follow', target: null, timer: 0, idle: 0, phase: 0, happy: 0, away: false };
-  const it = { id: 'dog', label: `Pet ${DOG_NAME} 🐶`, x: 0, z: 0, y: 0, r: 1.7, object: dog.group };
+  const it = { id: 'dog', label: `Pet ${DOG_NAME} 🐶`, x: 0, z: 0, y: 0, r: 1.7, object: dog.group, low: true };
   W.interactables.push(it);
 
   function placeBehind(poof = true) {
@@ -310,6 +310,25 @@ export function createDog(ctx) {
     update,
     busy: () => D.mode !== 'follow',
     nuggets,
+    // sit beside the explorer, facing the same way, for a selfie
+    photoPose() {
+      if (ctx.riding() || D.mode !== 'follow') return false;
+      const f = new THREE.Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw));
+      const x = player.pos.x + f.z * 1.1 + f.x * 0.3, z = player.pos.z - f.x * 1.1 + f.z * 0.3;
+      const g = W.groundAt(x, z, player.pos.y + 0.5);
+      if (g < -50) return false;
+      D.pos.set(x, Math.max(g, -0.3), z);
+      D.yaw = player.yaw;
+      D.idle = 4;
+      D.happy = 2;
+      for (const l of dog.legs) l.rotation.x = l.userData.rear ? -1.3 : 0;
+      dog.body.rotation.x = -0.45;
+      dog.body.position.y = -0.12;
+      dog.head.rotation.x = -0.2;
+      dog.group.position.copy(D.pos);
+      dog.group.rotation.y = D.yaw;
+      return true;
+    },
     // G: sniff out the nearest buried gold on the island you're on
     command() {
       if (ctx.riding()) return ctx.toast(`${DOG_NAME} is waiting for you`, 'Get off the train first', '🐶');

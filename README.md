@@ -33,25 +33,39 @@ The AI Learning Lab lessons:
 
 ## The archipelago
 
-Six outer islands float around Cloud Island. Each unlocks at a level (points come from exploring, playing and learning):
+Six outer islands float around Cloud Island. Each unlocks at a level (points come from exploring, playing and learning), and each has one purpose: it teaches a topic through a hands-on **trial**, and finishing it earns that island's certificate.
 
-| Island | Reached by | Unlocks | Adventure |
-| --- | --- | --- | --- |
-| 🏇 Manipur Island | 🚆 Train from the east station | LV 3 | A 3D Meitei calendar ring (month names in Meitei Mayek + English, festivals, a moon cycling through its phases), the story of Sagol Kangjei at a bronze polo rider, a playable pony-polo ground, and a Loktak-style lake with phumdis and a Sangai |
-| 🌲 Forest Island | 🌿 Living root bridge (west) | LV 4 | Machine learning in the field (coming) |
-| 🏜️ Desert Island | 🛣️ Road bridge (north-east) | LV 6 | Algorithms (coming) |
-| 🌊 Water Island | 🚡 Cable car (south) | LV 8 | Networking (coming) |
-| 🏙️ City Island | 🚆 Train from the north station | LV 10 | Learn by building a cloud city (coming) |
-| 🗿 Mysterious Island | 🌫️ Hidden stone bridge from Forest Island | LV 12 + a riddle | Cybersecurity escape (coming) |
+**The rule of the islands:** when you arrive on an island with a trial, the way home seals behind you (the bridge seal closes, the station won't let you board, and the map won't fast-travel you away). Complete the trial and it opens again. A quest card on the HUD shows the steps, **📜 Briefing** explains the island's purpose and what you'll learn, and **💡 Hint** gives up to three hints. Reloading the page doesn't escape a trial: you come back on that island.
 
-**Micro-certifications:** 15 certifications are earned automatically (10 are available now, including Manipur Heritage; the rest arrive with each island's adventure). Open them with the 🎓 button or `K`. Each one downloads as a PNG certificate with the visitor's name, date and a certificate ID. Earning 10 unlocks the Grand Certificate. Each one also has an **in** button that opens LinkedIn's "Add licence or certification" form already filled in (name, issuer, issue date, credential ID and credential URL), and a ↗ button to share it in a LinkedIn post. The credential URL points to [`verify.html`](verify.html), a public page that checks the certificate ID matches the name, certificate and date. The visitor reviews and saves everything on LinkedIn themselves. The certificates state clearly that they are interactive-learning awards, not accredited qualifications. Definitions live in [`js/certs.js`](js/certs.js), the islands in [`js/archipelago.js`](js/archipelago.js), and Manipur Island in [`js/manipur.js`](js/manipur.js).
+| Island | Reached by | Unlocks | Purpose and trial | Certificate |
+| --- | --- | --- | --- | --- |
+| 🏇 Manipur Island | 🚆 Train from the east station | LV 3 | Manipuri heritage. **The Festival Lanterns**: six festival lanterns are scattered across the island (on the statue's pedestal, in a watch-hut on stilts in the lake, on the stable roof, on the lookout rocks, by the moon). Find them and hang each on its month stone of the 3D Meitei calendar (Meitei Mayek + English). Also: the Sagol Kangjei story at a bronze polo rider and pony polo. | Manipur Heritage |
+| 🌲 Forest Island | 🌿 Living root bridge (west) | LV 4 | Machine learning in the field. **The Data Grove**: collect 10 labelled mushroom specimens (up a spiral stair on a giant tree, across a pond, inside a hollow log, onto a boulder via a bouncy mushroom, up a stump climb), grow a decision tree at the Learning Stump, and pass the forest test on 6 mushrooms the model has never seen. The specimens by the path suggest "red cap = poisonous", which fails the test: a built-in lesson on sampling bias and overfitting. | Field Data Scientist |
+| 🏜️ Desert Island | 🛣️ Road bridge (north-east) | LV 6 | Algorithms. **The Lost Caravan**: three trial stones, each up something you climb. The Stone of Search (on top of a stepped pyramid): find the caravan's chest under one of 32 numbered mounds in at most 5 probes, each answering higher or lower (binary search: 2⁵ = 32). The Stone of Order (on Camel Rock, up stepping pillars): sort 6 crates by weight with a balance scale that compares neighbours (bubble sort needs at most 15 weighings). The Stone of Paths (up a watchtower): mark the fewest-step trail from the camp to the oasis, then the quickest once the old trail turns to quicksand, which halves your speed and costs 2. Answers are checked against BFS and Dijkstra's algorithm, run in code. | Algorithms Adventurer |
+| 🌊 Water Island | 🚡 Cable car (south) | LV 8 | Networking: packets, DNS, the TCP handshake (adventure coming) | Network Navigator |
+| 🏙️ City Island | 🚆 Train from the north station | LV 10 | Cloud architecture, learned by building (adventure coming) | Cloud City Architect |
+| 🗿 Mysterious Island | 🌫️ Hidden stone bridge from Forest Island | LV 12 + a riddle | Cybersecurity escape (adventure coming) | Cyber Guardian |
+
+The Forest's mushrooms and their rule are invented for the lesson, and the game says so.
+
+**Certificates:** 15 certificates are earned automatically (12 are available now, including Manipur Heritage, Field Data Scientist and Algorithms Adventurer; the rest arrive with each island's adventure). Open them with the 🎓 button or `K`; a gold badge counts new ones. Each certificate shows the visitor's name, the skills practised, the issue date, a certificate ID and a QR code that opens its public check page. Earning 10 unlocks the Grand Certificate.
+
+Each certificate opens in a share sheet with a preview and these buttons:
+- **Post on LinkedIn**: copies a ready-made post (editable in the sheet), saves the certificate image and opens LinkedIn's post box, where the visitor attaches the image and posts.
+- **Add to profile**: opens LinkedIn's "Add licence or certification" form, already filled in.
+- **Download image**, **Copy image** (to paste into a post) and **Copy check link**.
+- **Share…**: the phone's own share menu (with the image) where the browser supports it. The check link (also LinkedIn's "credential URL") points to [`verify.html`](verify.html). It shows the certificate itself and confirms the ID matches the name, certificate and date. The visitor reviews and saves everything on LinkedIn themselves. The certificates say clearly that they are interactive-learning awards, not accredited qualifications.
+
+**Explorer snapshot** (📸 button or `P`): a 1600×900 picture of your current view, or a selfie with Buddy. It shows your name, level, points, progress to the next level, challenges, certificates, islands, zones, gold and achievements, plus a QR code back to the island. It opens in the same share sheet.
+
+QR codes are drawn by [`js/qr.js`](js/qr.js), a small dependency-free generator. Certificate definitions live in [`js/certs.js`](js/certs.js) and the image in [`js/cert-image.js`](js/cert-image.js).
 
 **Manipur Island sources:** month and weekday names in Meitei Mayek and the festival days follow Wikipedia's *Meitei calendar* article. The calendar is lunar, so the Gregorian spans shown are approximate and shift each year. The Sagol Kangjei story follows Wikipedia's *Sagol Kangjei* and *Marjing Polo Statue* articles. Meitei Mayek text uses Google's Noto Sans Meetei Mayek font.
 
 Game features:
 - An optional explorer name (or Guest) on the start screen. It shows on the HUD, as a tag above the robot, and in messages. It's stored only in the visitor's browser and can be changed in Help (`H`).
 - A points counter, levels and titles
-- 21 challenges (8 activities, 3 Brain Arena challenges, 5 lessons, 3 on Manipur Island and 2 with Buddy the dog), each with a celebration (confetti, fireworks, fanfare) when completed:
+- 24 challenges (8 activities, 3 Brain Arena challenges, 5 lessons, 4 on Manipur Island, 1 on Forest Island, 1 on Desert Island and 2 with Buddy the dog), each with a celebration (confetti, fireworks, fanfare) when completed:
   - ride the bicycle 150 m
   - jump the stunt ramp on the motorbike
   - shoot 3 baskets
@@ -66,6 +80,9 @@ Game features:
   - walk all 12 months of the Meitei calendar
   - finish the Sagol Kangjei story and quiz
   - score 3 goals in pony polo
+  - Manipur trial: hang the 6 festival lanterns
+  - Forest trial: pass the forest test
+  - Desert trial: find the lost caravan
   - fetch 10 gold nuggets with Buddy
   - build all 3 golden crafts
 - Bonus points pop up for orbs, gems, baskets, stunts and new zones
@@ -88,6 +105,21 @@ python -m http.server 5173
 ```
 
 Then open http://localhost:5173.
+
+## How the code is organised (and why the page stays light)
+
+The page starts with only what Cloud Island itself needs. Everything else is a separate module, downloaded the first time it's used:
+
+| Loaded | Modules |
+| --- | --- |
+| At startup | `main.js`, `world.js` and the main island's parts, `player.js`, `ui.js`, `data.js`, `archipelago.js` (island bases, bridges, transports, gates, seals), `islands/manager.js` |
+| When you open one | `lessons.js` (the AI Learning Lab lessons), `puzzles.js` (Brain Arena) |
+| When you view a certificate or take a snapshot | `cert-image.js`, `qr.js`, `share.js`, `snapshot.js` |
+| When an island is unlocked and you come near (or board its transport) | `islands/kit.js` (shared climbing pieces), then that island's own module: `islands/manipur.js`, `islands/forest.js`, `islands/desert.js`, … |
+
+Until an island's module has loaded, the island hides in mist. On a new visitor's first load, our own JavaScript is about 364 KB instead of the 522 KB it would be with everything up front, and Three.js uses its minified build (691 KB instead of 1.3 MB).
+
+**Adding an island adventure:** give the island a `trial`, `task` and `cert` in `ISLANDS` ([`js/archipelago.js`](js/archipelago.js)), add the task to `TASKS` ([`js/data.js`](js/data.js)) and let the certificate check it ([`js/certs.js`](js/certs.js)). Then write `js/islands/<id>.js`: its default export receives a kit (scene, world, a local frame, `data()` save slot, `progress`, `reward`, `solve()`, …) and returns `{ trial, title, mission, hints, quest(), update(), interact(), handleClick() }`. [`js/islands/forest.js`](js/islands/forest.js) is the reference.
 
 ## Edit the content
 
@@ -114,7 +146,7 @@ Three.js loads from jsDelivr (pinned to `three@0.170.0`) and fonts from Google F
 
 ## Controls
 
-`WASD`/arrows move · `Shift` sprint · `Space` jump (double jump) · `E` interact · drag to look · wheel to zoom · `M` map · `G` send Buddy for gold · `K` certificates · `C` classic view · `H` help · `Esc` close.
+`WASD`/arrows move · `Shift` sprint · `Space` jump (double jump) · `E` interact · drag to look · wheel to zoom · `M` map · `G` send Buddy for gold · `K` certificates · `P` snapshot · `C` classic view · `H` help · `Esc` close.
 
 Rubik's Cube: `U` `D` `L` `R` `F` `B` turn a face clockwise, `Shift` + letter turns it back, `Ctrl+Z` undo, `Esc` exit. The on-screen buttons do the same.
 
@@ -132,7 +164,7 @@ Puzzles live in [`js/puzzles.js`](js/puzzles.js). Each stores `hash: hashAnswer(
 
 ## Editing the challenges
 
-Challenges (titles, hints, points, goals) live in `TASKS` in [`js/data.js`](js/data.js). Open the site with `?debug` to get `window.__island` in the browser console (player, world, `step(seconds)`) for testing.
+Challenges (titles, hints, points, goals) live in `TASKS` in [`js/data.js`](js/data.js). Open the site with `?debug` to get `window.__island` in the browser console (player, world, islands, `step(seconds)`, `shot(view)` to render a 1600×900 frame) for testing.
 
 ## Map data
 

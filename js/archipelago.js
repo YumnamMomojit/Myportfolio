@@ -1,12 +1,13 @@
 // The archipelago: themed islands around Cloud Island, linked by a living root
 // bridge, a road bridge, a hidden stone bridge, two train lines and a cable car.
-// Each island unlocks at a level. Manipur Island's adventure is built in manipur.js;
-// the other islands' adventures arrive in later updates.
+// This file builds only what every visitor needs: the island bases, the bridges and
+// transports, the level gates and the exit seals. Each island's adventure lives in
+// js/islands/<id>.js and is loaded only when that island is unlocked and you come near
+// (see js/islands/manager.js); until then it stays hidden in mist.
 import * as THREE from 'three';
 import { makeLabel, drawCanvas, mulberry32, FONT } from './utils.js';
-import { std, glowMat, mesh, jitter, waterMaterial, softSpriteTexture } from './helpers.js';
-import { hashAnswer } from './puzzles.js';
-import { buildManipur } from './manipur.js';
+import { std, glowMat, mesh, jitter, softSpriteTexture } from './helpers.js';
+import { hashAnswer } from './hash.js';
 
 const norm = (x, z) => { const l = Math.hypot(x, z); return [x / l, z / l]; };
 const DIR = {
@@ -20,12 +21,48 @@ const at = (d, k) => [d[0] * k, d[1] * k];
 const MAIN_R = 64;
 
 export const ISLANDS = [
-  { id: 'manipur', name: 'Manipur Island', sub: 'Sagol Kangjei · Meitei calendar · Loktak', icon: '🏇', req: 3, r: 38, c: at(DIR.manipur, 150), top: '#6cbf6a', side: '#8a6a4c', color: '#fb923c', via: 'the train (east station)', topic: 'Manipur heritage: the story of Sagol Kangjei (polo), a 3D Meitei calendar and Loktak Lake' },
-  { id: 'forest', name: 'Forest Island', sub: 'machine-learning adventure', icon: '🌲', req: 4, r: 40, c: at(DIR.forest, 150), top: '#4f9e4f', side: '#6f5440', color: '#4ade80', via: 'the living root bridge (west, past the AI Lab)', topic: 'Machine learning in the wild: collect data, train a classifier, follow a decision-tree trail' },
-  { id: 'desert', name: 'Desert Island', sub: 'algorithms adventure', icon: '🏜️', req: 6, r: 42, c: at(DIR.desert, 152), top: '#e6c58a', side: '#c49a63', color: '#f59e0b', via: 'the road bridge (north-east, past the Brain Arena)', topic: 'Algorithms: find the oasis with A*, sort a camel caravan, navigate by the stars' },
-  { id: 'water', name: 'Water Island', sub: 'networking adventure', icon: '🌊', req: 8, r: 36, c: at(DIR.water, 156), top: '#efdcae', side: '#b98f62', color: '#38bdf8', via: 'the cable car (south, by the Fun Park)', topic: 'Networking: sail packets between harbours, the DNS lighthouse, the TCP handshake' },
-  { id: 'city', name: 'City Island', sub: 'learn by building', icon: '🏙️', req: 10, r: 42, c: at(DIR.city, 162), top: '#7c8594', side: '#5b6170', color: '#a78bfa', via: 'the train (north station)', topic: 'Build a cloud city: every building is a cloud service — then survive a failure' },
-  { id: 'mystery', name: 'Mysterious Island', sub: 'cybersecurity escape', icon: '🗿', req: 12, r: 32, c: [-150, 140], top: '#3d4a3b', side: '#3b3a45', color: '#c084fc', via: 'the hidden stone bridge on Forest Island (solve its riddle)', topic: 'Cybersecurity escape: cipher locks, phishing traps and a hidden temple' },
+  {
+    id: 'manipur', name: 'Manipur Island', sub: 'heritage · festivals · Sagol Kangjei', icon: '🏇', req: 3, r: 38, c: at(DIR.manipur, 150), top: '#6cbf6a', side: '#8a6a4c', color: '#fb923c', via: 'the train (east station)',
+    topic: 'Manipur heritage: the Meitei calendar and its festivals, the story of Sagol Kangjei and pony polo',
+    purpose: 'Discover Manipuri culture: a lunar calendar written in Meitei Mayek, the festivals that mark its year, and the game that became modern polo.',
+    learn: ['The 12 months of the Meitei calendar, in Meitei Mayek and English', 'Which festival belongs to which month', 'Sagol Kangjei: the Manipuri origins of polo'],
+    trial: 'The Festival Lanterns', task: 'lanterns', cert: 'heritage', load: () => import('./islands/manipur.js'),
+  },
+  {
+    id: 'forest', name: 'Forest Island', sub: 'machine-learning field trip', icon: '🌲', req: 4, r: 40, c: at(DIR.forest, 150), top: '#4f9e4f', side: '#6f5440', color: '#4ade80', via: 'the living root bridge (west, past the AI Lab)',
+    topic: 'Machine learning in the field: collect labelled specimens, grow a decision tree, pass the forest test',
+    purpose: 'Learn how machines learn from data by doing a field data scientist\u2019s job: collect examples, train a model and test it on data it has never seen.',
+    learn: ['Features, labels and datasets', 'Sampling bias: why easy-to-collect data can mislead', 'Decision trees: choosing the questions that split data best', 'Training accuracy vs test accuracy (overfitting)'],
+    trial: 'The Forest Test', task: 'forest-quest', cert: 'fieldml', load: () => import('./islands/forest.js'),
+  },
+  {
+    id: 'desert', name: 'Desert Island', sub: 'algorithms expedition', icon: '🏜️', req: 6, r: 42, c: at(DIR.desert, 152), top: '#e6c58a', side: '#c49a63', color: '#f59e0b', via: 'the road bridge (north-east, past the Brain Arena)',
+    topic: 'Algorithms: search, sort and find the shortest path across the dunes',
+    purpose: 'Think like an algorithm: search smarter, sort faster and find the shortest way across the dunes.',
+    learn: ['Binary search: why 5 probes are enough for 32 mounds', 'Sorting with comparisons (bubble sort)', 'Shortest paths: BFS for equal steps, Dijkstra for weighted ones'],
+    trial: 'The Lost Caravan', task: 'desert-quest', cert: 'algo', load: () => import('./islands/desert.js'),
+  },
+  {
+    id: 'water', name: 'Water Island', sub: 'networking harbour', icon: '🌊', req: 8, r: 36, c: at(DIR.water, 156), top: '#efdcae', side: '#b98f62', color: '#38bdf8', via: 'the cable car (south, by the Fun Park)',
+    topic: 'Networking: packets, addresses, DNS and the TCP handshake across a harbour of islets',
+    purpose: 'See how the internet moves data: packets, addresses, routing and the TCP handshake.',
+    learn: ['Packets and IP addresses', 'DNS', 'Routing', 'The TCP handshake'],
+    task: 'water-quest', cert: 'network', load: () => import('./islands/water.js'),
+  },
+  {
+    id: 'city', name: 'City Island', sub: 'learn by building', icon: '🏙️', req: 10, r: 42, c: at(DIR.city, 162), top: '#7c8594', side: '#5b6170', color: '#a78bfa', via: 'the train (north station)',
+    topic: 'Cloud architecture: build a city of cloud services, then survive a traffic spike',
+    purpose: 'Design resilient systems by building them: load balancers, replicas, caches and autoscaling.',
+    learn: ['Load balancing', 'Replication and failover', 'Caching and autoscaling'],
+    task: 'city-quest', cert: 'architect', load: () => import('./islands/city.js'),
+  },
+  {
+    id: 'mystery', name: 'Mysterious Island', sub: 'cybersecurity escape', icon: '🗿', req: 12, r: 32, c: [-150, 140], top: '#3d4a3b', side: '#3b3a45', color: '#c084fc', via: 'the hidden stone bridge on Forest Island (solve its riddle)',
+    topic: 'Cybersecurity escape: ciphers, phishing traps and a locked temple',
+    purpose: 'Think like a defender: crack ciphers, spot phishing and build strong secrets.',
+    learn: ['Classical ciphers', 'Spotting phishing', 'Strong passwords and hashing'],
+    task: 'mystery-quest', cert: 'cyber', load: () => import('./islands/mystery.js'),
+  },
 ];
 const ISLE = Object.fromEntries(ISLANDS.map((i) => [i.id, i]));
 
@@ -53,26 +90,35 @@ export function buildArchipelago(scene, W, circle, interact, quality) {
   const rng = mulberry32(777);
   W.decks = [];
   W.gates = [];
+  W.seals = [];
+  W.shrouds = {};
   W.transports = {};
   W.islandList = ISLANDS;
 
   for (const I of ISLANDS) {
     buildIslandBase(scene, I, rng);
     W.isles.push({ id: I.id, x: I.c[0], z: I.c[1], r: I.r - 1.4 });
-    THEMES[I.id](scene, W, I, circle, rng, quality, interact);
     const lbl = makeLabel(`${I.icon} ${I.name}`, { sub: `${I.sub} · unlocks at LV ${I.req}`, accent: I.color, height: 2.2 });
     lbl.position.set(I.c[0], 22, I.c[1]);
     scene.add(lbl);
-    // "adventure coming" signboard at the heart of each island
+    // the island's welcome sign; its adventure loads later, hidden in mist until then
     signboard(scene, I, circle, interact);
+    shroud(scene, W, I, rng);
   }
 
   // ---------------------------------------------------------------- bridges
   const F = ISLE.forest, D = ISLE.desert, M = ISLE.mystery;
-  rootBridge(scene, W, circle, v3(...STATIONS.rootBridge), v3(F.c[0] - DIR.forest[0] * (F.r - 1.7), 0, F.c[1] - DIR.forest[1] * (F.r - 1.7)), F, rng);
-  roadBridge(scene, W, circle, v3(...STATIONS.roadBridge), v3(D.c[0] - DIR.desert[0] * (D.r - 1.7), 0, D.c[1] - DIR.desert[1] * (D.r - 1.7)), D);
+  const rootB = v3(F.c[0] - DIR.forest[0] * (F.r - 1.7), 0, F.c[1] - DIR.forest[1] * (F.r - 1.7));
+  rootBridge(scene, W, circle, v3(...STATIONS.rootBridge), rootB, F, rng);
+  seal(scene, W, rootB, v3(DIR.forest[0], 0, DIR.forest[1]), 2.6, F);
+  const roadB = v3(D.c[0] - DIR.desert[0] * (D.r - 1.7), 0, D.c[1] - DIR.desert[1] * (D.r - 1.7));
+  roadBridge(scene, W, circle, v3(...STATIONS.roadBridge), roadB, D);
+  seal(scene, W, roadB, v3(DIR.desert[0], 0, DIR.desert[1]), 5, D);
   const fm = norm(M.c[0] - F.c[0], M.c[1] - F.c[1]);
-  stoneBridge(scene, W, circle, interact, v3(F.c[0] + fm[0] * (F.r - 1.7), 0, F.c[1] + fm[1] * (F.r - 1.7)), v3(M.c[0] - fm[0] * (M.r - 1.7), 0, M.c[1] - fm[1] * (M.r - 1.7)), M, rng);
+  const stoneA = v3(F.c[0] + fm[0] * (F.r - 1.7), 0, F.c[1] + fm[1] * (F.r - 1.7)), stoneB = v3(M.c[0] - fm[0] * (M.r - 1.7), 0, M.c[1] - fm[1] * (M.r - 1.7));
+  stoneBridge(scene, W, circle, interact, stoneA, stoneB, M, rng);
+  seal(scene, W, stoneA, v3(-fm[0], 0, -fm[1]), 3.2, F);
+  seal(scene, W, stoneB, v3(fm[0], 0, fm[1]), 3.2, M);
 
   // ---------------------------------------------------------------- trains & cable car
   const mp = ISLE.manipur, cy = ISLE.city, wa = ISLE.water;
@@ -140,7 +186,7 @@ function signboard(scene, I, circle, interact) {
     c.fillText(line, 26, y);
     c.fillStyle = '#fbbf24';
     c.font = `700 24px ${FONT}`;
-    c.fillText(I.id === 'manipur' ? '✅ Calendar · Polo story · Pony polo — explore!' : '🚧 Adventure arriving in the next update', 26, h - 26);
+    c.fillText(I.trial ? `🎯 Trial: ${I.trial} · 🎓 certificate` : '🚧 Adventure arriving in a coming update', 26, h - 26);
   });
   g.add(mesh(new THREE.BoxGeometry(2.9, 1.7, 0.08), [wood, wood, wood, wood, new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }), wood], 0, 1.9, 0));
   scene.add(g);
@@ -148,289 +194,66 @@ function signboard(scene, I, circle, interact) {
   interact({ id: `isle:${I.id}`, zone: I.id, label: `About ${I.name}`, x: x + toward[0] * 1.4, z: z + toward[1] * 1.4, r: 2.4, object: g });
 }
 
-// ---------------------------------------------------------------- island themes
+// ---------------------------------------------------------------- mist + exit seals
 
-function scatter(I, n, rng, minR, maxR, avoid = () => false) {
-  const out = [];
-  for (let tries = 0; tries < n * 12 && out.length < n; tries++) {
-    const a = rng() * Math.PI * 2, r = minR + Math.sqrt(rng()) * (maxR - minR);
-    const x = I.c[0] + Math.cos(a) * r, z = I.c[1] + Math.sin(a) * r;
-    if (avoid(x, z)) continue;
-    out.push([x, z, rng()]);
-  }
-  return out;
-}
-// keep the paths from stations / bridges to the centre and the sign clear
-const clearPath = (I) => (x, z) => {
-  const toward = norm(-I.c[0], -I.c[1]);
-  const lx = x - I.c[0], lz = z - I.c[1];
-  const along = lx * toward[0] + lz * toward[1], across = Math.abs(-lx * toward[1] + lz * toward[0]);
-  return (along > -4 && across < 5) || Math.hypot(lx, lz) < 5;
-};
-
-function instanced(scene, geo, mat, items, place) {
-  const im = new THREE.InstancedMesh(geo, mat, items.length);
-  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
-  items.forEach((it, i) => {
-    const t = place(it);
-    p.set(t.x, t.y, t.z);
-    q.setFromEuler(new THREE.Euler(t.rx || 0, t.ry || 0, t.rz || 0));
-    s.set(t.sx ?? t.s, t.sy ?? t.s, t.sz ?? t.s);
-    m4.compose(p, q, s);
-    im.setMatrixAt(i, m4);
-    if (t.color) im.setColorAt(i, new THREE.Color(t.color));
-  });
-  im.castShadow = im.receiveShadow = true;
-  scene.add(im);
-  return im;
-}
-
-const THEMES = {
-  manipur(scene, W, I, circle, rng, quality, interact) {
-    // the calendar ring, the Sagol Kangjei statue, the polo ground and Loktak lake live in manipur.js
-    buildManipur(scene, W, I, circle, interact, rng);
-  },
-
-  forest(scene, W, I, circle, rng) {
-    const trees = scatter(I, 70, rng, 6, I.r - 2.5, clearPath(I));
-    forestTrees(scene, trees, circle, ['#1f6f3d', '#2a7d46', '#358f52', '#22693b']);
-    // giant ancient tree
-    const [cx, cz] = I.c;
-    const g = new THREE.Group();
-    g.position.set(cx - 8, 0, cz + 8);
-    g.add(mesh(jitter(new THREE.CylinderGeometry(1.2, 2.2, 9, 9, 3), 0.3, rng), std('#5b3a24'), 0, 4.5, 0));
-    for (const [x, y, z, r] of [[0, 11, 0, 5], [3, 9.5, 1, 3.5], [-3, 10, -1, 3.6], [1, 13.5, -1, 3.2]]) g.add(mesh(jitter(new THREE.IcosahedronGeometry(r, 1), r * 0.2, rng), std('#2f7d3f'), x, y, z));
-    scene.add(g);
-    circle(cx - 8, cz + 8, 2.3, 12);
-    // glowing mushrooms (tomorrow's training data!)
-    const shrooms = scatter(I, 40, rng, 4, I.r - 3, clearPath(I));
-    instanced(scene, new THREE.CylinderGeometry(0.06, 0.08, 0.35, 6), std('#f5f5f4'), shrooms, ([x, z, k]) => ({ x, y: 0.17, z, s: 1 + k }));
-    instanced(scene, new THREE.SphereGeometry(0.22, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#7c2d12', emissiveIntensity: 0.4 }), shrooms, ([x, z, k]) => ({ x, y: 0.33 * (1 + k), z, s: 1 + k, color: k > 0.5 ? '#ef4444' : '#a78bfa' }));
-    fireflies(scene, W, I, rng, '#bef264');
-  },
-
-  desert(scene, W, I, circle, rng) {
-    const [cx, cz] = I.c;
-    const dunes = scatter(I, 16, rng, 8, I.r - 4, clearPath(I));
-    instanced(scene, new THREE.SphereGeometry(1, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), std('#ddb877'), dunes, ([x, z, k]) => ({ x, y: 0, z, sx: 5 + k * 6, sy: 1.2 + k * 2, sz: 3 + k * 3, ry: k * 6 }));
-    const cacti = scatter(I, 18, rng, 6, I.r - 3, clearPath(I));
-    const cactusMat = std('#3f8f4a');
-    for (const [x, z, k] of cacti) {
-      const g = new THREE.Group();
-      g.position.set(x, 0, z);
-      const h = 1.6 + k * 1.6;
-      g.add(mesh(new THREE.CapsuleGeometry(0.28, h, 4, 8), cactusMat, 0, h / 2 + 0.2, 0));
-      g.add(mesh(new THREE.CapsuleGeometry(0.17, 0.7, 4, 8), cactusMat, 0.45, h * 0.6, 0));
-      g.add(mesh(new THREE.CapsuleGeometry(0.17, 0.6, 4, 8), cactusMat, -0.42, h * 0.45, 0));
-      g.rotation.y = k * 6;
-      scene.add(g);
-      circle(x, z, 0.35, 3);
-    }
-    // oasis with palms
-    const oasis = { x: cx + 9, z: cz - 7, r: 5 };
-    const w = new THREE.Mesh(new THREE.CircleGeometry(oasis.r, 40).rotateX(-Math.PI / 2), waterMaterial({ deep: '#0e7490', shallow: '#5eead4' }));
-    w.position.set(oasis.x, 0.07, oasis.z);
-    scene.add(w);
-    W.lakes.push({ x: oasis.x, z: oasis.z, r: oasis.r - 0.3, depth: -0.6 });
-    for (let i = 0; i < 5; i++) palm(scene, circle, oasis.x + Math.cos(i * 1.3) * (oasis.r + 1.4), oasis.z + Math.sin(i * 1.3) * (oasis.r + 1.4), rng);
-    // half-buried ruin
-    const ruin = new THREE.Group();
-    ruin.position.set(cx - 10, 0, cz + 8);
-    const stone = std('#cfa874');
-    for (let i = 0; i < 4; i++) ruin.add(mesh(new THREE.BoxGeometry(9 - i * 2, 1.4, 9 - i * 2), stone, 0, 0.7 + i * 1.4, 0));
-    scene.add(ruin);
-    circle(cx - 10, cz + 8, 4.8, 6);
-  },
-
-  water(scene, W, I, circle, rng) {
-    const [cx, cz] = I.c;
-    const lagoon = { x: cx, z: cz, r: 17 };
-    const w = new THREE.Mesh(new THREE.CircleGeometry(lagoon.r, 56).rotateX(-Math.PI / 2), waterMaterial({ deep: '#075985', shallow: '#38bdf8', opacity: 0.92 }));
-    w.position.set(cx, 0.07, cz);
-    scene.add(w);
-    W.lakes.push({ x: cx, z: cz, r: lagoon.r - 0.4, depth: -0.6 });
-    // lighthouse on the far rim
-    const away = norm(I.c[0], I.c[1]);
-    const lx = cx + away[0] * (I.r - 6), lz = cz + away[1] * (I.r - 6);
-    const lh = new THREE.Group();
-    lh.position.set(lx, 0, lz);
-    for (let i = 0; i < 5; i++) lh.add(mesh(new THREE.CylinderGeometry(1.5 - i * 0.18, 1.6 - i * 0.18, 2, 16), std(i % 2 ? '#dc2626' : '#f8fafc'), 0, 1 + i * 2, 0));
-    const lamp = mesh(new THREE.SphereGeometry(0.7, 14, 10), glowMat('#fef08a', 3), 0, 10.8, 0, false);
-    lh.add(lamp);
-    const beam = new THREE.Mesh(new THREE.ConeGeometry(2.2, 14, 16, 1, true), new THREE.MeshBasicMaterial({ color: '#fef9c3', transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
-    beam.rotation.z = Math.PI / 2;
-    beam.position.set(7, 0, 0);
-    const pivot = new THREE.Group();
-    pivot.position.y = 10.8;
-    pivot.add(beam);
-    lh.add(pivot);
-    scene.add(lh);
-    circle(lx, lz, 1.7, 12);
-    W.updaters.push((t) => (pivot.rotation.y = t * 0.8));
-    // boats bobbing in the lagoon
-    for (let i = 0; i < 4; i++) {
-      const a = i * 1.6 + 0.4, r = 6 + i * 2.2;
-      const b = new THREE.Group();
-      b.position.set(cx + Math.cos(a) * r, 0.1, cz + Math.sin(a) * r);
-      b.add(mesh(new THREE.BoxGeometry(1.2, 0.4, 2.6), std(['#f97316', '#2563eb', '#16a34a', '#facc15'][i]), 0, 0.2, 0));
-      b.add(mesh(new THREE.CylinderGeometry(0.04, 0.04, 2, 6), std('#e5e7eb'), 0, 1.3, 0));
-      const sail = new THREE.Mesh(new THREE.PlaneGeometry(1, 1.5), new THREE.MeshStandardMaterial({ color: '#f8fafc', side: THREE.DoubleSide }));
-      sail.position.set(0, 1.4, 0.4);
-      sail.rotation.y = Math.PI / 2;
-      b.add(sail);
-      b.rotation.y = a;
-      scene.add(b);
-      W.updaters.push((t) => {
-        b.position.y = 0.1 + Math.sin(t * 1.5 + i) * 0.06;
-        b.rotation.z = Math.sin(t * 1.2 + i) * 0.06;
-      });
-    }
-    const palms = scatter(I, 12, rng, lagoon.r + 3, I.r - 3, clearPath(I));
-    for (const [x, z] of palms) palm(scene, circle, x, z, rng);
-  },
-
-  city(scene, W, I, circle, rng) {
-    const [cx, cz] = I.c;
-    const roadTex = drawCanvas(1024, 1024, (c, w, h) => {
-      c.fillStyle = '#6b7280';
-      c.fillRect(0, 0, w, h);
-      c.fillStyle = '#374151';
-      for (let i = 0; i < 4; i++) {
-        c.fillRect(0, 120 + i * 260, w, 70);
-        c.fillRect(120 + i * 260, 0, 70, h);
-      }
-      c.strokeStyle = '#fde68a';
-      c.setLineDash([24, 18]);
-      c.lineWidth = 4;
-      for (let i = 0; i < 4; i++) {
-        c.beginPath(); c.moveTo(0, 155 + i * 260); c.lineTo(w, 155 + i * 260); c.stroke();
-        c.beginPath(); c.moveTo(155 + i * 260, 0); c.lineTo(155 + i * 260, h); c.stroke();
-      }
-    });
-    const pave = mesh(new THREE.CircleGeometry(I.r - 1, 56).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: roadTex, roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -1 }), cx, 0.03, cz, false);
-    pave.receiveShadow = true;
-    scene.add(pave);
-    const winTex = drawCanvas(128, 256, (c, w, h) => {
-      c.fillStyle = '#1e293b';
-      c.fillRect(0, 0, w, h);
-      for (let y = 8; y < h; y += 22) for (let x = 8; x < w; x += 24) {
-        c.fillStyle = rng() < 0.6 ? '#fde68a' : '#334155';
-        c.fillRect(x, y, 14, 12);
-      }
-    });
-    winTex.wrapS = winTex.wrapT = THREE.RepeatWrapping;
-    // a few finished towers and many empty plots waiting to be built
-    const blocks = [];
-    for (let gx = -2; gx <= 1; gx++) for (let gz = -2; gz <= 1; gz++) blocks.push([cx + gx * 13 + 6.5 - 1.5, cz + gz * 13 + 6.5 - 1.5]);
-    blocks.forEach(([x, z], i) => {
-      if (Math.hypot(x - cx, z - cz) > I.r - 9 || clearPath(I)(x, z)) return;
-      if (i % 3 === 0) {
-        const h = 6 + rng() * 14;
-        const map = winTex.clone();
-        map.repeat.set(2, Math.max(1, h / 6));
-        map.needsUpdate = true;
-        const mat = new THREE.MeshStandardMaterial({ map, emissive: '#fde68a', emissiveMap: map, emissiveIntensity: 0.35, roughness: 0.5 });
-        scene.add(mesh(new THREE.BoxGeometry(6, h, 6), mat, x, h / 2, z));
-        circle(x, z, 4, h);
-      } else {
-        const plot = mesh(new THREE.BoxGeometry(7, 0.12, 7), std('#a3a3a3'), x, 0.06, z, false);
-        plot.receiveShadow = true;
-        scene.add(plot);
-        scene.add(mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.2, 6), std('#f97316'), x - 3.2, 0.6, z - 3.2));
-      }
-    });
-  },
-
-  mystery(scene, W, I, circle, rng) {
-    const [cx, cz] = I.c;
-    // stepped temple with a glowing rune door
-    const temple = new THREE.Group();
-    temple.position.set(cx, 0, cz - 4);
-    const stone = std('#57534e');
-    for (let i = 0; i < 5; i++) temple.add(mesh(new THREE.BoxGeometry(14 - i * 2.6, 1.6, 14 - i * 2.6), stone, 0, 0.8 + i * 1.6, 0));
-    const door = mesh(new THREE.PlaneGeometry(2.4, 3), glowMat('#c084fc', 1.8), 0, 1.6, 7.02, false);
-    temple.add(door);
-    scene.add(temple);
-    circle(cx, cz - 4, 7.2, 8);
-    W.updaters.push((t) => (door.material.emissiveIntensity = 1.2 + Math.sin(t * 2) * 0.6));
-    // broken columns
-    const cols = scatter(I, 12, rng, 11, I.r - 3, clearPath(I));
-    for (const [x, z, k] of cols) {
-      const h = 1 + k * 4;
-      const c = mesh(new THREE.CylinderGeometry(0.6, 0.7, h, 10), std('#78716c'), x, h / 2, z);
-      c.rotation.z = (k - 0.5) * 0.3;
-      scene.add(c);
-      circle(x, z, 0.75, h);
-    }
-    // crystals and orbiting stones
-    const crystals = scatter(I, 16, rng, 6, I.r - 3, clearPath(I));
-    instanced(scene, new THREE.OctahedronGeometry(0.6, 0), glowMat('#a855f7', 1.6), crystals, ([x, z, k]) => ({ x, y: 0.5 + k, z, sx: 0.6 + k, sy: 1.4 + k * 2, sz: 0.6 + k, ry: k * 5 }));
-    const orbit = new THREE.Group();
-    orbit.position.set(cx, 12, cz - 4);
-    for (let i = 0; i < 6; i++) {
-      const s = mesh(jitter(new THREE.DodecahedronGeometry(0.8 + rng() * 0.6, 0), 0.2, rng), std('#6d6875'), Math.cos(i) * 8, Math.sin(i * 2) * 1.5, Math.sin(i) * 8, false);
-      orbit.add(s);
-    }
-    scene.add(orbit);
-    W.updaters.push((t) => (orbit.rotation.y = t * 0.15));
-    // low drifting mist
-    const mistTex = softSpriteTexture('210,200,235');
-    for (let i = 0; i < 10; i++) {
-      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: mistTex, transparent: true, depthWrite: false, opacity: 0.35 }));
-      const a = rng() * Math.PI * 2, r = rng() * I.r * 0.8;
-      s.position.set(cx + Math.cos(a) * r, 1.2, cz + Math.sin(a) * r);
-      s.scale.setScalar(8 + rng() * 6);
-      scene.add(s);
-    }
-  },
-};
-
-function forestTrees(scene, trees, circle, greens) {
-  instanced(scene, new THREE.CylinderGeometry(0.2, 0.3, 1.8, 6), std('#6b4a2f'), trees, ([x, z, k]) => ({ x, y: 0.9 * (0.8 + k), z, s: 0.8 + k }));
-  const broad = trees.filter((t) => t[2] > 0.45), pine = trees.filter((t) => t[2] <= 0.45);
-  instanced(scene, new THREE.IcosahedronGeometry(1.5, 1), std('#ffffff'), broad, ([x, z, k]) => ({ x, y: 2.6 * (0.8 + k), z, s: 0.8 + k, color: greens[Math.floor(k * 37) % greens.length] }));
-  instanced(scene, new THREE.ConeGeometry(1.3, 3.2, 7), std('#ffffff'), pine, ([x, z, k]) => ({ x, y: 2.9 * (0.9 + k), z, s: 0.9 + k, color: greens[Math.floor(k * 53) % greens.length] }));
-  for (const [x, z, k] of trees) circle(x, z, 0.35 * (0.8 + k), 5);
-}
-
-function palm(scene, circle, x, z, rng) {
+// Until an island's adventure has loaded (it needs to be unlocked and near), it hides in mist.
+function shroud(scene, W, I, rng) {
   const g = new THREE.Group();
-  g.position.set(x, 0, z);
-  const lean = (rng() - 0.5) * 0.4;
-  for (let i = 0; i < 6; i++) {
-    const seg = mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.75, 6), std('#8b6b45'), lean * i * 0.5, 0.375 + i * 0.72, 0);
-    g.add(seg);
-  }
-  for (let i = 0; i < 6; i++) {
-    const leaf = mesh(new THREE.ConeGeometry(0.35, 2.4, 4), std('#2f9e5a'), lean * 3, 4.4, 0);
-    leaf.rotation.set(Math.PI / 2.4, (i / 6) * Math.PI * 2, 0, 'YXZ');
-    leaf.position.x += Math.sin((i / 6) * Math.PI * 2) * 0.9;
-    leaf.position.z += Math.cos((i / 6) * Math.PI * 2) * 0.9;
-    g.add(leaf);
+  const tex = softSpriteTexture('232,238,248');
+  const sprites = [];
+  for (let i = 0; i < 16; i++) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0.6 }));
+    const a = (i / 16) * Math.PI * 2 + rng() * 0.4, r = I.r * (0.15 + rng() * 0.7);
+    s.position.set(I.c[0] + Math.cos(a) * r, 2.5 + rng() * 7, I.c[1] + Math.sin(a) * r);
+    s.scale.setScalar(I.r * (0.6 + rng() * 0.4));
+    s.userData.ph = rng() * 6;
+    s.userData.y = s.position.y;
+    g.add(s);
+    sprites.push(s);
   }
   scene.add(g);
-  circle(x, z, 0.3, 5);
+  const S = { k: 1, target: 1, loading: false };
+  S.reveal = () => (S.target = 0);
+  S.setLoading = (v) => (S.loading = v);
+  W.shrouds[I.id] = S;
+  W.updaters.push((t, dt) => {
+    if (!g.visible) return;
+    S.k = THREE.MathUtils.damp(S.k, S.target, 1.6, dt);
+    for (const s of sprites) {
+      s.material.opacity = 0.6 * S.k * (S.loading ? 0.75 + Math.sin(t * 3 + s.userData.ph) * 0.25 : 1);
+      s.position.y = s.userData.y + Math.sin(t * 0.3 + s.userData.ph) * 0.8 + (1 - S.k) * 6;
+    }
+    if (S.target === 0 && S.k < 0.01) g.visible = false;
+  });
 }
 
-function fireflies(scene, W, I, rng, color) {
-  const N = 90, pos = new Float32Array(N * 3), seed = [];
-  for (let i = 0; i < N; i++) {
-    const a = rng() * Math.PI * 2, r = Math.sqrt(rng()) * (I.r - 3);
-    seed.push([I.c[0] + Math.cos(a) * r, 0.5 + rng() * 4, I.c[1] + Math.sin(a) * r, rng() * 6]);
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: new THREE.Color(color).multiplyScalar(2), size: 0.18, transparent: true, depthWrite: false }));
-  pts.frustumCulled = false;
-  scene.add(pts);
-  W.updaters.push((t) => {
-    for (let i = 0; i < N; i++) {
-      const s = seed[i];
-      pos[i * 3] = s[0] + Math.sin(t * 0.5 + s[3]) * 1.2;
-      pos[i * 3 + 1] = s[1] + Math.sin(t * 1.3 + s[3] * 2) * 0.4;
-      pos[i * 3 + 2] = s[2] + Math.cos(t * 0.4 + s[3]) * 1.2;
-    }
-    geo.attributes.position.needsUpdate = true;
+// A glowing seal across a bridge, just off the island. While the island's trial is unsolved
+// it closes behind you (js/islands/manager.js decides), so the only way home is to solve it.
+function seal(scene, W, end, into, w, isle) {
+  const gx = end.x - into.x * 2.6, gz = end.z - into.z * 2.6;
+  const nx = -into.z, nz = into.x;
+  const collider = { type: 'seg', ax: gx + nx * (w / 2 + 0.4), az: gz + nz * (w / 2 + 0.4), bx: gx - nx * (w / 2 + 0.4), bz: gz - nz * (w / 2 + 0.4), r: 0.3, top: 99, bottom: -99, enabled: false };
+  W.colliders.push(collider);
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(w + 0.8, 3.2), new THREE.MeshBasicMaterial({ color: new THREE.Color(isle.color).multiplyScalar(1.4), transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
+  wall.position.set(gx, 1.4, gz);
+  wall.rotation.y = Math.atan2(into.x, into.z);
+  wall.visible = false;
+  scene.add(wall);
+  const lbl = makeLabel('🔒 Sealed', { sub: `complete ${isle.trial || 'the island trial'} to leave`, accent: isle.color, height: 0.45 });
+  lbl.position.set(gx, 3.6, gz);
+  lbl.visible = false;
+  scene.add(lbl);
+  const S = { isle: isle.id, collider, locked: false, x: gx, z: gz };
+  S.set = (v) => {
+    S.locked = v;
+    collider.enabled = v;
+  };
+  W.seals.push(S);
+  W.updaters.push((t, dt) => {
+    const target = S.locked ? 0.35 + Math.sin(t * 3) * 0.08 : 0;
+    wall.material.opacity = THREE.MathUtils.damp(wall.material.opacity, target, 4, dt);
+    wall.visible = wall.material.opacity > 0.01;
+    lbl.visible = S.locked;
   });
 }
 

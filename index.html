@@ -16,7 +16,7 @@
   <script type="importmap">
     {
       "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
       }
     }
@@ -76,6 +76,7 @@
           <div class="xp-text" id="xp-text"></div>
         </div>
       </div>
+      <div class="isle-quest glass hidden" id="isle-quest" aria-live="polite"></div>
       <div class="quests glass" id="quests">
         <button class="q-head" aria-expanded="true">Quests <span aria-hidden="true">▾</span></button>
         <ul id="quest-list"></ul>
@@ -95,7 +96,8 @@
       <button id="btn-sound" title="Sound">🔊</button>
       <button id="btn-quality" title="Graphics quality">HQ</button>
       <button id="btn-dog" title="Send Buddy to sniff out gold (G)" aria-label="Send Buddy the dog to find gold">🐶</button>
-      <button id="btn-certs" title="Certificates (K)" aria-label="Open your certificates">🎓</button>
+      <button id="btn-snap" title="Snapshot: share your score and level (P)" aria-label="Take a snapshot with your score and level">📸</button>
+      <button id="btn-certs" title="Certificates (K)" aria-label="Open your certificates">🎓<span id="certs-badge" class="badge hidden" aria-label="new certificates"></span></button>
       <button id="btn-help" title="Help (H)" aria-label="Help and controls">?</button>
     </div>
 
@@ -193,7 +195,9 @@
           <li><span>Click</span>Open any object or kick a crate</li>
           <li><span><kbd>M</kbd></span>Map &amp; fast travel</li>
           <li><span><kbd>G</kbd> / 🐶</span>Send Buddy the dog to sniff out buried gold (craft with it at the Golden Workshop)</li>
-          <li><span><kbd>K</kbd> / 🎓</span>Certificates: download, add to LinkedIn or share</li>
+          <li><span><kbd>K</kbd> / 🎓</span>Certificates: view, download, add to your LinkedIn profile or post them</li>
+          <li><span>Islands</span>Each outer island teaches one topic through a trial. When you arrive, the way home seals until you complete it: follow the quest card (📜 Briefing, 💡 Hint)</li>
+          <li><span><kbd>P</kbd> / 📸</span>Snapshot: a shareable picture of your view (or a selfie with Buddy) with your score and level</li>
           <li><span><kbd>C</kbd></span>Classic (text) portfolio</li>
           <li><span><kbd>Esc</kbd></span>Close windows</li>
           <li><span>Riding</span><kbd>W</kbd>/<kbd>S</kbd> throttle &amp; brake · <kbd>A</kbd>/<kbd>D</kbd> steer · <kbd>Shift</kbd> boost · <kbd>E</kbd> get off</li>
@@ -228,6 +232,7 @@
       <small id="cel-kicker">Challenge complete!</small>
       <h3 id="cel-title"></h3>
       <b class="cel-pts" id="cel-pts"></b>
+      <button id="cel-action" class="btn primary cel-action hidden" type="button"></button>
     </div>
   </div>
   <canvas id="confetti" aria-hidden="true"></canvas>

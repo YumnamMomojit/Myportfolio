@@ -68,6 +68,7 @@ export function buildWorld(scene, { quality = 'high' } = {}) {
     updaters: [],
     fruits: [],
     pad: PAD,
+    pads: [{ x: PAD.x, z: PAD.z, r: 1.3, to: SKY_ISLAND }],
     chest: null,
   };
 
@@ -125,10 +126,12 @@ export function buildWorld(scene, { quality = 'high' } = {}) {
   };
 
   // Push a point out of every static collider (xz plane). Returns true on contact.
-  W.resolve = (p, r) => {
+  // `y` is the height to test; the player passes its higher height of this frame and the last, so
+  // dropping fast onto a pillar counts as landing on top rather than hitting its side.
+  W.resolve = (p, r, y = p.y) => {
     let hit = false;
     for (const c of W.colliders) {
-      if (p.y > c.top || p.y + 2 < c.bottom) continue;
+      if (y > c.top || y + 2 < c.bottom) continue;
       if (c.type === 'circle') {
         const dx = p.x - c.x, dz = p.z - c.z;
         const R = c.r + r;

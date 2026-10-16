@@ -9,13 +9,11 @@ import { Sound } from './audio.js';
 import { SKILLS, TASKS } from './data.js';
 import { createActivities } from './activities.js';
 import { dampAngle, makeLabel } from './utils.js';
-import { createLessons } from './lessons.js';
-import { createPuzzles } from './puzzles.js';
 import { ARENA } from './arena.js';
 import { ISLANDS, checkRiddle, RIDDLE_TEXT } from './archipelago.js';
-import { createManipurGame, monthPanel, calendarPanel } from './manipur.js';
+import { createIslandManager } from './islands/manager.js';
 import { createDog } from './dog.js';
-import { CERTS, GRAND_NEEDS, checkCerts, certCode, renderCertificate, downloadCanvas, certsPanelHTML } from './certs.js';
+import { CERTS, GRAND_NEEDS, checkCerts, certById, certCode, certPostText, linkedInAddURL, verifyURL, certsPanelHTML } from './certs.js';
 import { esc } from './utils.js';
 import * as UI from './ui.js';
 
@@ -208,16 +206,6 @@ const A = createActivities({
   },
 });
 
-// Manipur Island: calendar stones, the pony and the polo ball
-A.registerVehicle('pony', W.manipur.pony.group, W.manipur.pony.it);
-const manipur = createManipurGame({
-  W, player, sound, bursts, reward,
-  state: () => state,
-  toast: (title, sub, icon) => UI.toast(title, sub, 'info', icon),
-  progress: (id, v) => A.progress(id, v),
-  add: (id, n = 1) => A.progress(id, (state.tasks[id] || 0) + n),
-});
-
 // Buddy the dog and the Golden Workshop
 const dog = createDog({
   scene, W, player, sound, bursts, reward,
@@ -225,6 +213,26 @@ const dog = createDog({
   toast: (title, sub, icon) => UI.toast(title, sub, 'info', icon),
   progress: (id, v) => A.progress(id, v),
   riding: () => !!ride,
+});
+
+// The outer islands: each adventure loads on demand and seals the way home until its trial is solved
+const islands = createIslandManager({
+  scene, W, player, sound, bursts, UI, reward, fireworks,
+  state: () => state,
+  persist,
+  level: () => UI.levelOf(state.xp),
+  riding: () => !!ride,
+  progress: (id, v) => A.progress(id, v),
+  add: (id, n = 1) => A.progress(id, (state.tasks[id] || 0) + n),
+  toast: (title, sub, icon) => UI.toast(title, sub, 'info', icon),
+  registerVehicle: (kind, group, it) => A.registerVehicle(kind, group, it),
+  certTitle: (id) => CERTS.find((c) => c.id === id)?.title || '',
+  panel: (o) => {
+    lessons.onClose();
+    puzzles.close();
+    UI.showRawPanel(o);
+    sound.open();
+  },
 });
 
 // ------------------------------------------------------------------ explorer name
@@ -288,28 +296,48 @@ const worldFx = (() => {
   };
 })();
 
-const lessons = createLessons({
-  UI,
-  explorer: () => settings.explorer,
-  isDone: (id) => state.done.includes(id),
-  complete: (id) => A.progress(id, 1),
-  sound: (n) => sound[n]?.(),
-  agent: () => W.agent,
-  world: worldFx,
-});
-
-const puzzles = createPuzzles({
-  UI,
-  state: () => state,
-  sound: (n) => sound[n]?.(),
-  solved: (p, count) => {
-    sound.collect();
-    reward(p.pts, player.pos.clone().setY(player.pos.y + 2.4), `🧠 +${p.pts}`);
-    UI.toast(`Puzzle solved: ${p.title}`, p.explain, 'achieve', p.cat === 'math' ? '➗' : '💻');
-    A.progress(p.cat === 'math' ? 'puzzle-math' : 'puzzle-code', count);
-    persist();
+// The lessons and the Brain Arena puzzles load the first time you open one,
+// so the page starts with only what the world needs.
+let lessonsMod = null, puzzlesMod = null, shareMod = null;
+const lessons = {
+  has: (id) => id.startsWith('learn:'),
+  async open(id) {
+    lessonsMod ||= (await import('./lessons.js')).createLessons({
+      UI,
+      explorer: () => settings.explorer,
+      isDone: (id) => state.done.includes(id),
+      complete: (id) => A.progress(id, 1),
+      sound: (n) => sound[n]?.(),
+      agent: () => W.agent,
+      world: worldFx,
+    });
+    lessonsMod.open(id);
   },
-});
+  onClose: () => lessonsMod?.onClose(),
+  handleClick: (target) => lessonsMod?.handleClick(target) || false,
+};
+const puzzles = {
+  async open(cat) {
+    puzzlesMod ||= (await import('./puzzles.js')).createPuzzles({
+      UI,
+      state: () => state,
+      sound: (n) => sound[n]?.(),
+      solved: (p, count) => {
+        sound.collect();
+        reward(p.pts, player.pos.clone().setY(player.pos.y + 2.4), `🧠 +${p.pts}`);
+        UI.toast(`Puzzle solved: ${p.title}`, p.explain, 'achieve', p.cat === 'math' ? '➗' : '💻');
+        A.progress(p.cat === 'math' ? 'puzzle-math' : 'puzzle-code', count);
+        persist();
+      },
+    });
+    puzzlesMod.open(cat);
+  },
+  close: () => puzzlesMod?.close(),
+  handleClick: (target) => puzzlesMod?.handleClick(target) || false,
+  handleSubmit: (target) => puzzlesMod?.handleSubmit(target) || false,
+};
+// the share sheet (certificates and snapshots) also loads on first use
+const loadShare = async () => (shareMod ||= await import('./share.js'));
 
 // ------------------------------------------------------------------ flying Rubik's cube mode
 let cubeMode = false;
@@ -371,7 +399,15 @@ function closeOverlay() {
 
 // dev aid: open the page with ?debug to inspect the game from the console
 if (new URLSearchParams(location.search).has('debug')) window.__island = {
-  player, W, A, get state() { return state; },
+  player, W, A, islands, get state() { return state; },
+  // render one 1600×900 frame, optionally from a given camera (for checking scenes)
+  shot(view) {
+    if (view) {
+      camera.position.set(...view.pos);
+      camera.lookAt(...view.look);
+    }
+    return captureScene(false);
+  },
   // advance the simulation by `sec` seconds at 60 fps (hidden tabs don't animate)
   step(sec) { for (let i = 0; i < Math.round(sec * 60); i++) tick(1 / 60); render(); },
   grant: (n) => grantXP(n),
@@ -403,7 +439,7 @@ function grantXP(n) {
   UI.updateHUD(state, TOTALS);
 }
 
-// micro-certifications are earned automatically; ten unlock the Grand Certificate
+// certificates are earned automatically; ten unlock the Grand Certificate
 let awarding = false;
 function awardCerts() {
   if (awarding) return;
@@ -411,17 +447,29 @@ function awardCerts() {
   const had = (state.certs || []).length;
   const fresh = checkCerts(state, { zones: ZONES.length });
   for (const c of fresh) {
-    UI.celebrate({ icon: c.icon, title: `Micro-certification: ${c.title}`, pts: 200, who: settings.explorer });
+    UI.celebrate({ icon: c.icon, title: `Certificate earned: ${c.title}`, pts: 200, who: settings.explorer, action: { label: '🎓 View & share', run: () => openCertificate(c.id) } });
     sound.achieve();
   }
   if (fresh.length) {
     grantXP(200 * fresh.length);
     if (had < GRAND_NEEDS && state.certs.length >= GRAND_NEEDS) {
-      UI.celebrate({ icon: '🎓', title: 'Grand Certificate unlocked! Download it from 🎓 Certificates', pts: 0, big: true, who: settings.explorer });
+      ensureGrandDate();
+      UI.celebrate({ icon: '🎓', title: 'Grand Certificate unlocked!', pts: 0, big: true, who: settings.explorer, action: { label: '🎓 View & share', run: () => openCertificate('grand') } });
       fireworks(12, 8);
-    } else UI.toast('Certificate ready to download', 'Open 🎓 Certificates (key K)', 'info', '📜');
+    } else UI.toast('Your certificate is ready', 'View it, download it or add it to LinkedIn: 🎓 (K)', 'info', '🎓');
   }
+  updateCertBadge();
   awarding = false;
+}
+// a gold dot on the 🎓 button counts certificates you haven't opened yet
+function updateCertBadge() {
+  const seen = new Set(state.certsSeen || []);
+  const ids = (state.certs || []).map((c) => c.id);
+  if (ids.length >= GRAND_NEEDS) ids.push('grand');
+  const n = ids.filter((id) => !seen.has(id)).length;
+  const b = $('#certs-badge');
+  b.textContent = n;
+  b.classList.toggle('hidden', !n);
 }
 
 const certName = () => settings.certName || settings.explorer || '';
@@ -432,27 +480,133 @@ function ensureGrandDate() {
     persist();
   }
 }
-function openCerts() {
+function openCerts(editName = false) {
   ensureGrandDate();
   lessons.onClose();
   puzzles.close();
-  UI.showRawPanel({ kicker: 'Cloud Island Academy', title: '🎓 Your certificates', color: '#fbbf24', html: certsPanelHTML(state, certName()) });
+  UI.showRawPanel({ kicker: 'Cloud Island Academy', title: '🎓 Your certificates', color: '#fbbf24', html: certsPanelHTML(state, certName(), { editName }) });
   sound.open();
 }
-function downloadCert(id) {
+// one certificate: the full image, plus download / LinkedIn profile / LinkedIn post / check link
+async function openCertificate(id) {
   const name = certName();
-  if (!name) return openCerts();
-  if (id === 'grand') {
-    const list = CERTS.filter((c) => state.certs.some((x) => x.id === c.id));
-    ensureGrandDate();
-    const date = state.grandDate;
-    downloadCanvas(renderCertificate({ name, date, code: certCode(name, 'grand', date), grand: true, list }), `Cloud-Island-Grand-Certificate-${name.replace(/\s+/g, '-')}.png`);
-  } else {
-    const rec = state.certs.find((x) => x.id === id);
-    const cert = CERTS.find((c) => c.id === id);
-    downloadCanvas(renderCertificate({ name, cert, date: rec.date, code: certCode(name, id, rec.date) }), `Cloud-Island-${cert.title.replace(/\W+/g, '-')}-${name.replace(/\s+/g, '-')}.png`);
+  if (!name) return openCerts(); // ask for the name to print first
+  const cert = certById(id);
+  if (id === 'grand') ensureGrandDate();
+  const date = id === 'grand' ? state.grandDate : (state.certs || []).find((x) => x.id === id)?.date;
+  if (!cert || !date) return openCerts();
+  const code = certCode(name, id, date), url = verifyURL(name, id, date);
+  const list = CERTS.filter((c) => state.certs.some((x) => x.id === c.id));
+  const [{ renderCertificate }, { openShareSheet }] = await Promise.all([import('./cert-image.js'), loadShare()]);
+  const canvas = renderCertificate({ name, cert, date, code, grand: id === 'grand', list, url });
+  state.certsSeen = [...new Set([...(state.certsSeen || []), id])];
+  persist();
+  updateCertBadge();
+  lessons.onClose();
+  puzzles.close();
+  await openShareSheet({
+    UI, canvas, color: '#fbbf24',
+    kicker: 'Cloud Island Academy · certificate',
+    title: `${cert.icon} ${cert.title}`,
+    alt: `${cert.title} certificate awarded to ${name}`,
+    filename: `Cloud-Island-${cert.title.replace(/\W+/g, '-')}-${name.replace(/\s+/g, '-')}.png`,
+    text: certPostText(cert, url),
+    intro: `<p class="lead">Issued to <b>${esc(name)}</b> on ${date} · certificate ID <code>${code}</code></p>
+      <p class="muted">Skills: ${cert.skills.map(esc).join(' · ')}</p>`,
+    extra: `<a class="btn li" href="${esc(linkedInAddURL(name, cert, date))}" target="_blank" rel="noopener"><b class="li-mark">in</b> Add to profile</a>
+      <button class="btn" data-share="link" data-link="${esc(url)}">🔗 Copy check link</button>
+      <button class="btn" data-cert-list>← All certificates</button>`,
+    note: '“Add to profile” fills in LinkedIn’s licence and certification form with this certificate, its ID and its check link.',
+    onAction: sharedOnce,
+  });
+  sound.open();
+}
+// a small thank-you the first time someone shares
+function sharedOnce(kind) {
+  if (!['linkedin', 'native'].includes(kind) || state.shared) return;
+  state.shared = true;
+  reward(50, player.pos.clone().setY(player.pos.y + 2.4), '📣 Thanks for sharing! +50');
+}
+
+// ------------------------------------------------------------------ explorer snapshot (P / 📸)
+const camTmp = new THREE.Vector3();
+// renders one frame at a fixed 1600×900 (sharp and well framed on any screen), then restores the view
+function captureScene(selfie) {
+  const pr = renderer.getPixelRatio(), aspect = camera.aspect, fov = camera.fov;
+  renderer.setPixelRatio(1);
+  renderer.setSize(1600, 900, false);
+  composer.setPixelRatio(1);
+  composer.setSize(1600, 900);
+  camera.aspect = 16 / 9;
+  camera.fov = 55;
+  camera.updateProjectionMatrix();
+  if (selfie) {
+    dog.photoPose();
+    const f = new THREE.Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw));
+    const side = new THREE.Vector3(f.z, 0, -f.x); // the side Buddy sits on (screen right in the selfie)
+    const pair = player.pos.clone().addScaledVector(side, 0.55).add(camTmp.set(0, 1.0, 0)); // robot + Buddy
+    camera.position.copy(pair).addScaledVector(f, 5.8).addScaledVector(side, -0.6).add(camTmp.set(0, 0.7, 0));
+    camera.position.y = Math.max(camera.position.y, W.groundAt(camera.position.x, camera.position.z, camera.position.y) + 0.6);
+    camera.lookAt(pair.addScaledVector(side, -1.7)); // aim left of them, so they stand clear of the scorecard
   }
-  UI.toast('Certificate downloaded', name, 'info', '📜');
+  render();
+  const src = renderer.domElement;
+  const shot = document.createElement('canvas');
+  shot.width = src.width;
+  shot.height = src.height;
+  shot.getContext('2d').drawImage(src, 0, 0); // read straight after rendering, before the frame is presented
+  renderer.setPixelRatio(pr);
+  renderer.setSize(innerWidth, innerHeight, false);
+  composer.setPixelRatio(pr);
+  composer.setSize(innerWidth, innerHeight);
+  camera.aspect = aspect;
+  camera.fov = fov;
+  camera.updateProjectionMatrix();
+  render(); // repaint at screen size straight away, so the view never flickers
+  return shot;
+}
+async function takeSnapshot(selfie = false) {
+  if (mode !== 'play') return;
+  sound.shutter();
+  const shot = captureScene(selfie);
+  $('#fade').classList.add('flash');
+  setTimeout(() => $('#fade').classList.remove('flash'), 250);
+  const lvl = UI.levelOf(state.xp);
+  const who = settings.explorer || 'Guest Explorer';
+  const home = new URL('./', location.href);
+  const n = (a) => (a || []).length;
+  const info = {
+    name: who, level: lvl, title: UI.levelTitle(lvl), xp: state.xp, inLevel: state.xp % UI.XP_PER_LEVEL, perLevel: UI.XP_PER_LEVEL,
+    stats: [
+      ['🏆', 'Challenges', n(state.done), TASKS.length],
+      ['🎓', 'Certificates', n(state.certs), CERTS.length],
+      ['🏝️', 'Islands explored', n(state.islands), ISLANDS.length],
+      ['🧭', 'Zones discovered', n(state.visited), ZONES.length],
+      ['🪙', 'Gold found', n(state.goldFound), dog.nuggets.length],
+      ['⭐', 'Achievements', n(state.achievements), TOTALS.achievements],
+    ],
+    date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+    url: home.href, host: home.host + home.pathname.replace(/\/$/, ''),
+  };
+  const [{ composeSnapshot }, { openShareSheet }] = await Promise.all([import('./snapshot.js'), loadShare()]);
+  const canvas = composeSnapshot(shot, info);
+  lessons.onClose();
+  puzzles.close();
+  await openShareSheet({
+    UI, canvas, color: '#5eead4',
+    kicker: 'Explorer snapshot',
+    title: '📸 Your Cloud Island moment',
+    alt: `Cloud Island snapshot: ${who}, level ${lvl}, ${state.xp} points`,
+    filename: `Cloud-Island-${who.replace(/\W+/g, '-')}-LV${lvl}.png`,
+    text: `🎮 I'm LV ${lvl} · ${UI.levelTitle(lvl)} on Cloud Island with ${state.xp.toLocaleString('en-US')} points!
+✔ ${n(state.done)} of ${TASKS.length} challenges · 🎓 ${n(state.certs)} certificate${n(state.certs) === 1 ? '' : 's'} · 🏝️ ${n(state.islands)} of ${ISLANDS.length} islands explored
+
+Cloud Island is an interactive 3D learning world and portfolio by Yumnam Momojit Singh. Can you beat my score? ${home.href}
+
+#CloudIsland #LearningByPlaying #ArtificialIntelligence`,
+    extra: `<button class="btn" data-snap="view">🎥 Retake: my view</button><button class="btn" data-snap="selfie">🤳 Selfie with Buddy</button>`,
+    onAction: sharedOnce,
+  });
 }
 
 // ------------------------------------------------------------------ trains & cable car
@@ -466,6 +620,13 @@ function board(trId, end) {
     sound.thud();
     return;
   }
+  if (end === 1 && islands.stranded() === tr.isle) {
+    const I = ISLANDS.find((i) => i.id === tr.isle);
+    UI.toast('The way home is sealed', `Complete ${I.trial} first. Stuck? Press 💡 Hint in the quest card.`, 'info', '🔒');
+    sound.thud();
+    return;
+  }
+  if (end === 0) islands.ensure(tr.isle); // start loading the island while you ride
   if (player.vehicle) A.action();
   if (cubeMode) exitCube();
   tr.at = end;
@@ -501,14 +662,19 @@ function updateRide(dt) {
 // island info + riddle panels
 function openIsle(id) {
   const I = ISLANDS.find((i) => i.id === id);
+  if (islands.runtime(id)?.trial) {
+    lessons.onClose();
+    puzzles.close();
+    return islands.openBriefing(id);
+  }
   const lvl = UI.levelOf(state.xp);
   UI.showRawPanel({
     kicker: `${I.icon} Island · unlocks at LV ${I.req}`, title: I.name, color: I.color,
-    html: `<p class="lead">${esc(I.topic)}.</p>
+    html: `<p class="lead">${esc(I.purpose)}</p>
       <p>Reach it by <b>${esc(I.via)}</b>. ${lvl >= I.req ? '✅ Unlocked for you.' : `🔒 You are LV ${lvl}.`}</p>
-      ${I.id === 'manipur'
-        ? `<div class="callout">🗓️ Walk the 12 stones of the <b>Meitei calendar</b> (Meitei Mayek + English) · 📜 hear the story of <b>Sagol Kangjei</b> at the bronze polo rider · 🏇 ride the pony and score 3 goals. Finish them (and visit Thoubal on the India map) to earn the <b>Manipur Heritage</b> certificate.</div>`
-        : `<div class="callout">🚧 This island's full learning adventure — with its own micro-certification — arrives in an upcoming update. Explore it now and come back soon!</div>`}`,
+      ${I.trial
+        ? `<div class="callout">🎯 Trial: <b>${esc(I.trial)}</b>. Once you arrive, the way home seals until you complete it. Reward: the 🎓 <b>${esc(CERTS.find((c) => c.id === I.cert)?.title || '')}</b> certificate.</div>`
+        : `<div class="callout">🚧 This island's learning adventure, with its own certificate, arrives in a coming update. Explore it now and come back soon!</div>`}`,
   });
   sound.open();
 }
@@ -551,6 +717,7 @@ function collectOrbVisual(o, silent = false) {
 
 function openPanel(id) {
   if (A.interact(id)) return;
+  if (islands.interact(id)) return;
   if (lessons.has(id)) {
     if (!state.opened.includes(id)) {
       state.opened.push(id);
@@ -579,17 +746,6 @@ function openPanel(id) {
   if (id === 'riddle:mystery') return openRiddle();
   if (id === 'dog') return dog.pet();
   if (id === 'workshop') return openWorkshop();
-  if (id === 'calendar' || id.startsWith('month:')) {
-    lessons.onClose();
-    puzzles.close();
-    if (!state.opened.includes('calendar')) {
-      state.opened.push('calendar');
-      grantXP(25);
-    }
-    UI.showRawPanel(id === 'calendar' ? calendarPanel(state.calendar) : monthPanel(+id.slice(6)));
-    sound.open();
-    return;
-  }
   lessons.onClose();
   puzzles.close();
   if (id === 'secret' && W.chest) W.chest.open = true;
@@ -647,6 +803,7 @@ addEventListener('keydown', (e) => {
   if (e.code === 'KeyH' || e.key === '?') UI.openOverlay($('#help'));
   if (e.code === 'KeyK') openCerts();
   if (e.code === 'KeyG' && !e.repeat) dog.command();
+  if (e.code === 'KeyP' && !e.repeat) takeSnapshot();
   if (e.code === 'KeyC') UI.openOverlay($('#classic'));
   keys.add(e.code);
 });
@@ -795,10 +952,16 @@ document.addEventListener('submit', (e) => {
   }
 });
 document.addEventListener('click', (e) => {
+  if (islands.handleClick(e.target)) return;
   if (lessons.handleClick(e.target)) return;
   if (puzzles.handleClick(e.target)) return;
-  const dl = e.target.closest('[data-cert-dl]');
-  if (dl) return downloadCert(dl.dataset.certDl);
+  if (shareMod?.handleShareClick(e.target)) return;
+  const cv = e.target.closest('[data-cert-view]');
+  if (cv) return openCertificate(cv.dataset.certView);
+  if (e.target.closest('[data-cert-list]')) return openCerts();
+  if (e.target.closest('[data-cert-rename]')) return openCerts(true);
+  const snap = e.target.closest('[data-snap]');
+  if (snap) return takeSnapshot(snap.dataset.snap === 'selfie');
   const cr = e.target.closest('[data-craft]');
   if (cr) {
     if (dog.craft(cr.dataset.craft)) openWorkshop();
@@ -847,6 +1010,13 @@ $('#travel-list').addEventListener('click', (e) => {
   if (b) travelTo(b.dataset.travel);
 });
 function travelTo(id) {
+  const stuck = islands.stranded();
+  if (stuck && id !== `isle:${stuck}`) {
+    const I = ISLANDS.find((i) => i.id === stuck);
+    UI.toast('The way home is sealed', `Complete ${I.trial} on ${I.name} first`, 'info', '🔒');
+    sound.thud();
+    return;
+  }
   if (id.startsWith('isle:')) {
     const I = ISLANDS.find((i) => i.id === id.slice(5));
     const lvl = UI.levelOf(state.xp);
@@ -894,6 +1064,7 @@ $('#btn-map').addEventListener('click', toggleMap);
 $('#btn-help').addEventListener('click', () => UI.openOverlay($('#help')));
 $('#btn-certs').addEventListener('click', openCerts);
 $('#btn-dog').addEventListener('click', () => dog.command());
+$('#btn-snap').addEventListener('click', () => takeSnapshot());
 $('#btn-classic').addEventListener('click', () => UI.openOverlay($('#classic')));
 $('#btn-classic-start').addEventListener('click', () => UI.openOverlay($('#classic')));
 $('#btn-sound').addEventListener('click', () => {
@@ -985,7 +1156,7 @@ const events = {
     }
   },
   rampLaunch: () => sound.whoosh(),
-  vehicleAction: () => manipur.swing(),
+  vehicleAction: () => islands.vehicleAction(),
   bounce: () => {
     sound.bounce();
     bursts.spawn(player.pos.clone().setY(0.4), '#5eead4', 26, 5, { up: 6 });
@@ -1082,7 +1253,7 @@ function updateGame(dt) {
   else player.update(dt, input, camYaw, W, events);
   input.jump = false;
   A.update(dt, t);
-  manipur.update(dt);
+  islands.update(dt, t);
   dog.update(dt);
   const p = player.pos;
 
@@ -1099,7 +1270,9 @@ function updateGame(dt) {
     flash();
     A.onRespawn();
     achieve('diver');
-    player.place(player.lastSafe.x, 0, player.lastSafe.z, player.yaw);
+    const back = islands.respawnPoint(player.lastSafe);
+    if (back) player.place(back.x, 0, back.z, back.yaw);
+    else player.place(player.lastSafe.x, 0, player.lastSafe.z, player.yaw);
     camTarget.copy(player.pos).y += 1.5;
     UI.toast('Respawned', 'The cloud sea caught you', 'info', '☁️');
   }
@@ -1155,7 +1328,9 @@ function updateGame(dt) {
   for (const it of W.interactables) {
     if (it.hidden || Math.abs(p.y - it.y) > 2.5) continue;
     const d = Math.hypot(p.x - it.x, p.z - it.z);
-    if (d < it.r && d < bestD) { best = it; bestD = d; }
+    if (d >= it.r) continue;
+    const score = d + (it.low ? 4 : 0); // low-priority things (petting Buddy) never hide what you came for
+    if (score < bestD) { best = it; bestD = score; }
   }
   nearest = best;
   const promptText = cubeMode || ride ? null : A.prompt() || best?.label || null;
@@ -1301,6 +1476,15 @@ applyQuality();
 syncSoundBtn();
 W.setLevel(UI.levelOf(state.xp), state);
 UI.updateHUD(state, TOTALS);
+updateCertBadge();
+{
+  const back = islands.restore();
+  if (back) {
+    player.place(back.x, 0, back.z, back.yaw);
+    camYaw = back.yaw + Math.PI;
+    camTarget.copy(player.pos).y += 1.5;
+  }
+}
 UI.setExplorer(settings.explorer);
 frame();
 $('#loader').classList.add('hidden');

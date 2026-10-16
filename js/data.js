@@ -327,4 +327,9 @@ export const TASKS = [
   { id: 'dog-gold', icon: '🐶', title: 'Fetch 10 gold nuggets with Buddy', hint: 'Press G (or the 🐶 button): Buddy the dog sniffs out buried gold on the island you are on.', pts: 200, goal: 10 },
   { id: 'craft', icon: '🛠️', title: 'Build all 3 golden crafts', hint: 'Bring gold to the Golden Workshop near the Fun Park: kennel, collar and statue.', pts: 250, goal: 3 },
   { id: 'polo', icon: '🏇', title: 'Score 3 goals in Sagol Kangjei', hint: 'Manipur Island — ride the pony, press Space to swing the mallet and drive the ball over an end line.', pts: 250, goal: 3 },
+  { id: 'lanterns', icon: '🏮', title: 'Manipur trial: hang the 6 festival lanterns', hint: 'Manipur Island — find the festival lanterns (climb!) and hang each on its month stone. It unseals the way home.', pts: 300, goal: 1 },
+  // Forest Island (LV 4, across the living root bridge)
+  { id: 'forest-quest', icon: '🌲', title: 'Forest trial: pass the forest test', hint: 'Forest Island — collect mushroom specimens, grow a decision tree at the Learning Stump and pass the test. It unseals the way home.', pts: 400, goal: 1 },
+  // Desert Island (LV 6, across the road bridge)
+  { id: 'desert-quest', icon: '🏜️', title: 'Desert trial: find the lost caravan', hint: 'Desert Island — find the buried chest in 5 probes, sort the camel crates on a balance scale and mark the shortest trail to the oasis. It unseals the way home.', pts: 400, goal: 1 },
 ];

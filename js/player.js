@@ -349,7 +349,7 @@ export class Player {
     this.vel.y -= GRAVITY * dt;
     const prevY = p.y;
     p.addScaledVector(this.vel, dt);
-    if (world.resolve(p, this.radius) && this.vehicle) this.speedF *= Math.exp(-6 * dt);
+    if (world.resolve(p, this.radius, Math.max(prevY, p.y)) && this.vehicle) this.speedF *= Math.exp(-6 * dt);
 
     const ground = world.groundAt(p.x, p.z, Math.max(prevY, p.y));
     if (p.y <= ground && this.vel.y <= 0) {
@@ -389,10 +389,14 @@ export class Player {
       this.safeTimer = 0.4;
     }
 
-    // bounce pad
-    const pad = world.pad;
-    if (this.onGround && Math.hypot(p.x - pad.x, p.z - pad.z) < 1.3 && p.y < 0.5) {
-      this.launchTo(world.platforms[0], events);
+    // bounce pads: each one launches you onto its target platform
+    if (this.onGround) {
+      for (const pad of world.pads) {
+        if (Math.hypot(p.x - pad.x, p.z - pad.z) < (pad.r || 1.3) && Math.abs(p.y - (pad.y || 0)) < 0.5) {
+          this.launchTo(pad.to, events);
+          break;
+        }
+      }
     }
 
     this.animate(dt);

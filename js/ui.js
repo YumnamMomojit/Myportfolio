@@ -311,7 +311,7 @@ export function updateHUD(state, totals) {
     { label: 'Collect Skill Orbs', n: state.orbs.length, of: totals.orbs },
     { label: 'Unlock achievements', n: state.achievements.length, of: totals.achievements },
     { label: 'Explore the islands', n: (state.islands || []).length, of: totals.islands },
-    { label: 'Earn micro-certificates', n: (state.certs || []).length, of: 10 },
+    { label: 'Earn certificates', n: (state.certs || []).length, of: 10 },
   ];
   const done = new Set(state.done || []);
   $('#task-list').innerHTML = TASKS.map((t) => {
@@ -323,6 +323,35 @@ export function updateHUD(state, totals) {
   $('#quest-list').innerHTML = q
     .map((x) => `<li class="${x.n >= x.of ? 'done' : ''}"><span>${x.n >= x.of ? '✔' : '◇'} ${x.label}</span><b>${x.n}/${x.of}</b></li>`)
     .join('');
+}
+
+// The island quest card: the trial's steps, whether the way home is sealed, briefing + hint buttons.
+// Tap its title to fold it down to the next step (phones start folded).
+let questShown = null;
+export function islandQuest(q) {
+  const el = $('#isle-quest');
+  questShown = q;
+  if (!q) {
+    el.classList.add('hidden');
+    return;
+  }
+  if (!el.dataset.ready) {
+    el.dataset.ready = '1';
+    if (innerWidth < 640) el.classList.add('compact');
+    el.addEventListener('click', (e) => {
+      if (!e.target.closest('[data-iq-toggle]')) return;
+      el.classList.toggle('compact');
+      islandQuest(questShown);
+    });
+  }
+  const compact = el.classList.contains('compact');
+  const done = q.steps.filter((s) => s.done).length;
+  const steps = compact ? q.steps.filter((s) => !s.done).slice(0, 1) : q.steps;
+  el.classList.remove('hidden');
+  el.style.setProperty('--c', q.color);
+  el.innerHTML = `<button class="iq-head" data-iq-toggle aria-expanded="${!compact}" title="${compact ? 'Show all steps' : 'Show only the next step'}"><span>${q.icon} ${esc(q.title)}</span>${q.sealed ? '<b class="iq-lock" title="The way home is sealed until you complete the trial">🔒 sealed</b>' : q.solved ? '<b class="iq-ok">✔ solved</b>' : ''}<small class="iq-count">${done}/${q.steps.length}</small></button>
+    ${steps.length ? `<ol class="iq-steps">${steps.map((s) => `<li class="${s.done ? 'done' : ''}"><span>${esc(s.text)}</span>${s.of ? `<b>${s.n}/${s.of}</b>` : s.done ? '<b>✔</b>' : ''}</li>`).join('')}</ol>` : ''}
+    <div class="iq-actions"><button class="btn small" data-isle-brief="${q.id}" aria-label="Island briefing">📜${compact ? '' : ' Briefing'}</button>${q.hints ? `<button class="btn small" data-isle-hint="${q.id}" aria-label="Hint">💡${compact ? '' : ' Hint'}</button>` : ''}</div>`;
 }
 
 export function levelTitle(lvl) {
@@ -436,13 +465,28 @@ function nextCelebration() {
   $('#cel-kicker').textContent = task.big ? `Legendary${task.who ? `, ${task.who}` : ''}!` : `Well done${task.who ? `, ${task.who}` : ''}!`;
   $('#cel-title').textContent = task.title;
   $('#cel-pts').textContent = task.pts ? `+${task.pts} pts` : '🏆';
-  el.classList.remove('hidden', 'out');
-  confetti(task.big ? 320 : 160);
-  setTimeout(() => el.classList.add('out'), task.big ? 3800 : 2600);
-  setTimeout(() => {
+  // an optional button (e.g. "View & share" a new certificate) keeps the card up a little longer
+  const btn = $('#cel-action');
+  btn.classList.toggle('hidden', !task.action);
+  btn.textContent = task.action?.label || '';
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    clearTimeout(t1);
+    clearTimeout(t2);
     el.classList.add('hidden');
     nextCelebration();
-  }, task.big ? 4300 : 3100);
+  };
+  btn.onclick = () => {
+    finish();
+    task.action?.run();
+  };
+  el.classList.remove('hidden', 'out');
+  confetti(task.big ? 320 : 160);
+  const stay = (task.big ? 3800 : 2600) + (task.action ? 3200 : 0);
+  const t1 = setTimeout(() => el.classList.add('out'), stay);
+  const t2 = setTimeout(finish, stay + 500);
 }
 
 function confetti(n) {
