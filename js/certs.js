@@ -45,6 +45,32 @@ export function checkCerts(state, ctx) {
   return fresh;
 }
 
+// ---------------------------------------------------------------- LinkedIn + public check page
+
+// The public page that checks a certificate ID (used as LinkedIn's "credential URL")
+export function verifyURL(name, id, date) {
+  const u = new URL('verify.html', location.href);
+  u.search = new URLSearchParams({ n: name, c: id, d: date, k: certCode(name, id, date) }).toString();
+  return u.href;
+}
+// LinkedIn's "Add to profile" form, pre-filled (Licenses & certifications)
+export function linkedInAddURL(name, cert, date) {
+  const [y, m] = date.split('-');
+  return `https://www.linkedin.com/profile/add?${new URLSearchParams({
+    startTask: 'CERTIFICATION_NAME',
+    name: `${cert.title} (Cloud Island micro-certification)`,
+    organizationName: 'Cloud Island Academy',
+    issueYear: y,
+    issueMonth: String(+m),
+    certUrl: verifyURL(name, cert.id, date),
+    certId: certCode(name, cert.id, date),
+  })}`;
+}
+export const linkedInShareURL = (url) => `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+const GRAND = { id: 'grand', icon: '🎓', title: 'Cloud Island Grand Certificate' };
+const shareButtons = (name, cert, date) =>
+  `<a class="btn small li" href="${esc(linkedInAddURL(name, cert, date))}" target="_blank" rel="noopener" title="Add to your LinkedIn profile" aria-label="Add ${esc(cert.title)} to your LinkedIn profile">in</a><a class="btn small" href="${esc(linkedInShareURL(verifyURL(name, cert.id, date)))}" target="_blank" rel="noopener" title="Share in a LinkedIn post" aria-label="Share ${esc(cert.title)} in a LinkedIn post">↗</a>`;
+
 // ---------------------------------------------------------------- certificate image
 
 function wrap(g, text, x, y, maxW, lh) {
@@ -186,15 +212,16 @@ export function certsPanelHTML(state, name) {
     ${name ? '' : `<form class="cert-name" data-cert-name autocomplete="off"><label>Name on your certificates</label><input name="n" maxlength="40" placeholder="Your full name" required /><button class="btn small primary" type="submit">Save name</button></form>`}
     <div class="cert-card grand ${grandOK ? 'earned' : ''}">
       <span class="ci">🎓</span><div><b>Cloud Island Grand Certificate</b><small>${grandOK ? 'Unlocked — congratulations!' : `Unlocks after ${GRAND_NEEDS} micro-certifications`}</small></div>
-      ${grandOK && name ? '<button class="btn small primary" data-cert-dl="grand">⬇ Download</button>' : ''}
+      ${grandOK && name ? `<span class="cert-actions"><button class="btn small primary" data-cert-dl="grand">⬇ Download</button>${state.grandDate ? shareButtons(name, GRAND, state.grandDate) : ''}</span>` : ''}
     </div>
     <div class="cert-grid">${CERTS.map((c) => {
       const e = earned.get(c.id);
       return `<div class="cert-card ${e ? 'earned' : c.soon ? 'soon' : ''}">
         <span class="ci">${c.icon}</span>
         <div><b>${esc(c.title)}</b><small>${esc(e ? `Earned ${e.date}` : c.how)}</small></div>
-        ${e && name ? `<button class="btn small" data-cert-dl="${c.id}">⬇</button>` : e ? '<span class="tag">✔</span>' : c.soon ? '<span class="tag">soon</span>' : '<span class="tag">🔒</span>'}
+        ${e && name ? `<span class="cert-actions"><button class="btn small" data-cert-dl="${c.id}" title="Download PNG" aria-label="Download ${esc(c.title)}">⬇</button>${shareButtons(name, c, e.date)}</span>` : e ? '<span class="tag">✔</span>' : c.soon ? '<span class="tag">soon</span>' : '<span class="tag">🔒</span>'}
       </div>`;
     }).join('')}</div>
-    <p class="muted">Certificates are saved as PNG images with your name, date and a certificate ID. They celebrate learning on this site and are not accredited qualifications.</p>`;
+    <p class="muted">⬇ saves a PNG with your name, date and certificate ID. <b>in</b> opens LinkedIn's “Add licence or certification” form, already filled in, with a link to a public page that checks the ID. ↗ shares that page in a LinkedIn post. You review everything on LinkedIn before saving it.</p>
+    <p class="muted">Certificates celebrate learning on this site and are not accredited qualifications.</p>`;
 }

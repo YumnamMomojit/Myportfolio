@@ -563,6 +563,22 @@ ul.fest li { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baselin
 ul.fest .mm { font-size: 1.15rem; color: #fbbf24; }
 ul.fest span:last-child { color: var(--muted); font-size: 0.85rem; }
 
+/* Golden Workshop + LinkedIn buttons */
+.gold-pouch { display: flex; gap: 12px; align-items: center; margin: 10px 0 14px; padding: 12px 14px; border-radius: 12px; background: rgba(250, 204, 21, 0.1); border: 1px solid rgba(250, 204, 21, 0.4); }
+.gold-pouch b { font-size: 1.5rem; color: #facc15; white-space: nowrap; }
+.gold-pouch span { color: var(--muted); font-size: 0.85rem; }
+.craft-list { display: grid; gap: 8px; }
+.craft { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.03); border: 1px dashed var(--line); }
+.craft.built { border: 1px solid rgba(250, 204, 21, 0.6); background: rgba(250, 204, 21, 0.08); }
+.craft .ci { font-size: 1.6rem; flex: none; }
+.craft div { flex: 1; min-width: 0; }
+.craft b { display: block; }
+.craft small { color: var(--muted); font-size: 0.8rem; }
+.craft button[disabled] { opacity: 0.45; cursor: not-allowed; }
+.cert-actions { display: flex; gap: 4px; flex: none; }
+.cert-actions .btn { text-decoration: none; }
+.btn.li { background: #0a66c2; border-color: #0a66c2; color: #fff; font-weight: 700; }
+
 /* ---------- small screens ---------- */
 @media (max-width: 640px) {
   .hud-tl { top: 10px; left: 10px; gap: 6px; }

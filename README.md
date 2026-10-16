@@ -17,6 +17,9 @@ A playable Three.js portfolio. You walk a small robot around a floating island. 
 | Snow Peak Valley | Falling snow, a snowman, a slippery frozen pond, and icy stepping stones up to a summit |
 | Brain Arena | Hard maths and programming puzzles (answers are stored as hashes, so they can't be read from the source) and a flying 3×3 Rubik's Cube you can play |
 | AI Learning Lab | Five interactive lessons, each ending in a quiz (see below), plus a live AI-agent drone that senses, plans, acts and greets you by name |
+| Golden Workshop | Spend the gold that Buddy digs up on a golden kennel, a golden collar for Buddy and a golden statue of you |
+
+**Buddy the dog** follows you everywhere (and waits while you ride the train or cable car). Press `G` or the 🐶 button and he sniffs out the nearest buried gold on the island you're on, digs it up and brings it back. 13 nuggets are hidden across Cloud Island and the outer islands. Press `E` near him to pet him.
 
 The AI Learning Lab lessons:
 
@@ -41,14 +44,14 @@ Six outer islands float around Cloud Island. Each unlocks at a level (points com
 | 🏙️ City Island | 🚆 Train from the north station | LV 10 | Learn by building a cloud city (coming) |
 | 🗿 Mysterious Island | 🌫️ Hidden stone bridge from Forest Island | LV 12 + a riddle | Cybersecurity escape (coming) |
 
-**Micro-certifications:** 15 certifications are earned automatically (10 are available now, including Manipur Heritage; the rest arrive with each island's adventure). Open them with the 🎓 button or `K`. Each one downloads as a PNG certificate with the visitor's name, date and a certificate ID. Earning 10 unlocks the Grand Certificate. The certificates state clearly that they are interactive-learning awards, not accredited qualifications. Definitions live in [`js/certs.js`](js/certs.js), the islands in [`js/archipelago.js`](js/archipelago.js), and Manipur Island in [`js/manipur.js`](js/manipur.js).
+**Micro-certifications:** 15 certifications are earned automatically (10 are available now, including Manipur Heritage; the rest arrive with each island's adventure). Open them with the 🎓 button or `K`. Each one downloads as a PNG certificate with the visitor's name, date and a certificate ID. Earning 10 unlocks the Grand Certificate. Each one also has an **in** button that opens LinkedIn's "Add licence or certification" form already filled in (name, issuer, issue date, credential ID and credential URL), and a ↗ button to share it in a LinkedIn post. The credential URL points to [`verify.html`](verify.html), a public page that checks the certificate ID matches the name, certificate and date. The visitor reviews and saves everything on LinkedIn themselves. The certificates state clearly that they are interactive-learning awards, not accredited qualifications. Definitions live in [`js/certs.js`](js/certs.js), the islands in [`js/archipelago.js`](js/archipelago.js), and Manipur Island in [`js/manipur.js`](js/manipur.js).
 
 **Manipur Island sources:** month and weekday names in Meitei Mayek and the festival days follow Wikipedia's *Meitei calendar* article. The calendar is lunar, so the Gregorian spans shown are approximate and shift each year. The Sagol Kangjei story follows Wikipedia's *Sagol Kangjei* and *Marjing Polo Statue* articles. Meitei Mayek text uses Google's Noto Sans Meetei Mayek font.
 
 Game features:
 - An optional explorer name (or Guest) on the start screen. It shows on the HUD, as a tag above the robot, and in messages. It's stored only in the visitor's browser and can be changed in Help (`H`).
 - A points counter, levels and titles
-- 19 challenges (8 activities, 3 Brain Arena challenges, 5 lessons and 3 on Manipur Island), each with a celebration (confetti, fireworks, fanfare) when completed:
+- 21 challenges (8 activities, 3 Brain Arena challenges, 5 lessons, 3 on Manipur Island and 2 with Buddy the dog), each with a celebration (confetti, fireworks, fanfare) when completed:
   - ride the bicycle 150 m
   - jump the stunt ramp on the motorbike
   - shoot 3 baskets
@@ -63,6 +66,8 @@ Game features:
   - walk all 12 months of the Meitei calendar
   - finish the Sagol Kangjei story and quiz
   - score 3 goals in pony polo
+  - fetch 10 gold nuggets with Buddy
+  - build all 3 golden crafts
 - Bonus points pop up for orbs, gems, baskets, stunts and new zones
 - Quests: 13 zones and 7 Skill Orbs
 - 7 achievements, including "Island Champion" (every challenge) and "Speedcuber" (a full 20-move scramble)
@@ -109,7 +114,7 @@ Three.js loads from jsDelivr (pinned to `three@0.170.0`) and fonts from Google F
 
 ## Controls
 
-`WASD`/arrows move · `Shift` sprint · `Space` jump (double jump) · `E` interact · drag to look · wheel to zoom · `M` map · `C` classic view · `H` help · `Esc` close.
+`WASD`/arrows move · `Shift` sprint · `Space` jump (double jump) · `E` interact · drag to look · wheel to zoom · `M` map · `G` send Buddy for gold · `K` certificates · `C` classic view · `H` help · `Esc` close.
 
 Rubik's Cube: `U` `D` `L` `R` `F` `B` turn a face clockwise, `Shift` + letter turns it back, `Ctrl+Z` undo, `Esc` exit. The on-screen buttons do the same.
 

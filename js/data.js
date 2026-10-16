@@ -324,5 +324,7 @@ export const TASKS = [
   // Manipur Island (LV 3, by train from the east station)
   { id: 'calendar', icon: '🗓️', title: 'Walk the Meitei calendar (12 months)', hint: 'Manipur Island — stand in front of every month stone in the calendar ring.', pts: 200, goal: 12 },
   { id: 'polo-story', icon: '📜', title: 'Lesson: the story of Sagol Kangjei', hint: 'Manipur Island — visit the bronze polo rider and finish the story and quiz.', pts: 150, goal: 1, learn: true },
+  { id: 'dog-gold', icon: '🐶', title: 'Fetch 10 gold nuggets with Buddy', hint: 'Press G (or the 🐶 button): Buddy the dog sniffs out buried gold on the island you are on.', pts: 200, goal: 10 },
+  { id: 'craft', icon: '🛠️', title: 'Build all 3 golden crafts', hint: 'Bring gold to the Golden Workshop near the Fun Park: kennel, collar and statue.', pts: 250, goal: 3 },
   { id: 'polo', icon: '🏇', title: 'Score 3 goals in Sagol Kangjei', hint: 'Manipur Island — ride the pony, press Space to swing the mallet and drive the ball over an end line.', pts: 250, goal: 3 },
 ];

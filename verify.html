@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Certificate Check · Cloud Island</title>
+  <meta name="description" content="Check a Cloud Island micro-certification ID. Cloud Island is the interactive 3D portfolio of Yumnam Momojit Singh." />
+  <meta property="og:title" content="Cloud Island micro-certification" />
+  <meta property="og:description" content="Earned by exploring, playing and learning on Cloud Island, an interactive 3D portfolio. An interactive-learning award, not an accredited qualification." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+      }
+    }
+  </script>
+  <style>
+    :root { --bg: #070b1a; --card: #0f172a; --line: rgba(148, 163, 184, 0.25); --text: #e2e8f0; --muted: #94a3b8; --ok: #4ade80; --bad: #f87171; --gold: #fbbf24; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; background: radial-gradient(circle at 30% 0%, #1e293b, var(--bg) 60%); color: var(--text); font: 400 16px/1.55 'Space Grotesk', system-ui, sans-serif; }
+    main { width: min(640px, 100%); background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 28px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45); }
+    .kicker { font: 700 0.72rem 'JetBrains Mono', monospace; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); }
+    h1 { margin: 6px 0 4px; font-size: 1.7rem; line-height: 1.2; }
+    .status { display: flex; gap: 10px; align-items: center; margin: 18px 0; padding: 12px 14px; border-radius: 12px; font-weight: 600; }
+    .status.ok { background: rgba(74, 222, 128, 0.1); border: 1px solid rgba(74, 222, 128, 0.4); color: var(--ok); }
+    .status.bad { background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.4); color: var(--bad); }
+    dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0 0 18px; }
+    dt { color: var(--muted); font-size: 0.85rem; }
+    dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+    .muted { color: var(--muted); font-size: 0.88rem; }
+    a.btn { display: inline-block; margin-top: 8px; padding: 0.6em 1.2em; border-radius: 999px; background: var(--gold); color: #111827; font-weight: 700; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="kicker">☁️ Cloud Island Academy · certificate check</div>
+    <h1 id="title">Checking…</h1>
+    <div id="status" class="status"></div>
+    <dl id="facts"></dl>
+    <p class="muted">Cloud Island is the interactive 3D portfolio of Yumnam Momojit Singh. Visitors earn micro-certifications by exploring, playing and finishing its lessons and quizzes.</p>
+    <p class="muted">This check confirms that the certificate ID matches the name, certificate and date it was issued with. The ID is generated in the visitor's browser, so it shows the certificate is consistent, not that its holder was supervised. It is an interactive-learning award, <b>not an accredited academic qualification</b>.</p>
+    <a class="btn" href="./">Explore Cloud Island →</a>
+  </main>
+  <script type="module">
+    import { CERTS, certCode } from './js/certs.js';
+
+    const q = new URLSearchParams(location.search);
+    const name = (q.get('n') || '').slice(0, 60), id = q.get('c') || '', date = q.get('d') || '', code = q.get('k') || '';
+    const cert = id === 'grand' ? { icon: '🎓', title: 'Cloud Island Grand Certificate', skill: 'Ten or more Cloud Island micro-certifications' } : CERTS.find((c) => c.id === id);
+    const valid = !!(cert && name && /^\d{4}-\d{2}-\d{2}$/.test(date) && code && certCode(name, id, date) === code);
+
+    const $ = (s) => document.querySelector(s);
+    $('#title').textContent = cert ? `${cert.icon} ${cert.title}` : 'Unknown certificate';
+    const status = $('#status');
+    status.className = `status ${valid ? 'ok' : 'bad'}`;
+    status.textContent = valid ? '✔ Certificate ID matches this certificate' : '✖ This certificate ID does not match. The link may be incomplete or altered.';
+    const rows = [['Awarded to', name || '—'], ['Certificate', cert ? cert.title : id || '—'], ['Covers', cert?.skill || '—'], ['Issued', date || '—'], ['Certificate ID', code || '—']];
+    for (const [k, v] of rows) {
+      const dt = document.createElement('dt');
+      dt.textContent = k;
+      const dd = document.createElement('dd');
+      dd.textContent = v;
+      $('#facts').append(dt, dd);
+    }
+    document.title = valid ? `${name} · ${cert.title} · Cloud Island` : 'Certificate Check · Cloud Island';
+  </script>
+</body>
+</html>

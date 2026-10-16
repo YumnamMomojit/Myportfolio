@@ -50,6 +50,8 @@ export class Sound {
   pickup() { this.tone(440, 0.08, 'triangle', 0.05); this.tone(660, 0.1, 'triangle', 0.05, 0, 0.06); }
   throwBall() { this.noise(0.18, 0.04, 1500); }
   dribble(v = 1) { this.tone(95, 0.09, 'sine', 0.08 * v, 60); }
+  bark() { this.tone(420, 0.07, 'square', 0.035, 260); this.tone(460, 0.08, 'square', 0.03, 280, 0.14); }
+  dig() { this.noise(0.9, 0.035, 500); }
   neigh() { this.tone(820, 0.45, 'sawtooth', 0.022, 520); this.tone(640, 0.3, 'sawtooth', 0.018, 980, 0.38); }
   thud() { this.tone(140, 0.12, 'square', 0.03, 80); }
   swish() { this.noise(0.35, 0.06, 2400); [784, 988, 1318].forEach((f, i) => this.tone(f, 0.18, 'triangle', 0.04, 0, 0.1 + i * 0.07)); }

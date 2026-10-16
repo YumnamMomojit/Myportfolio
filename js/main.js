@@ -14,6 +14,7 @@ import { createPuzzles } from './puzzles.js';
 import { ARENA } from './arena.js';
 import { ISLANDS, checkRiddle, RIDDLE_TEXT } from './archipelago.js';
 import { createManipurGame, monthPanel, calendarPanel } from './manipur.js';
+import { createDog } from './dog.js';
 import { CERTS, GRAND_NEEDS, checkCerts, certCode, renderCertificate, downloadCanvas, certsPanelHTML } from './certs.js';
 import { esc } from './utils.js';
 import * as UI from './ui.js';
@@ -25,7 +26,7 @@ const isTouch = matchMedia('(pointer: coarse)').matches;
 // ------------------------------------------------------------------ persistence
 const SAVE_KEY = 'cloud-island-progress-v1';
 const SETTINGS_KEY = 'cloud-island-settings-v1';
-const freshState = () => ({ xp: 0, visited: [], orbs: [], opened: [], achievements: [], tasks: {}, done: [], gems: [], puzzles: [], islands: [], riddles: [], certs: [], calendar: [] });
+const freshState = () => ({ xp: 0, visited: [], orbs: [], opened: [], achievements: [], tasks: {}, done: [], gems: [], puzzles: [], islands: [], riddles: [], certs: [], calendar: [], goldFound: [], goldSpent: 0, crafted: [] });
 function load(key, fallback) {
   try {
     const v = JSON.parse(localStorage.getItem(key));
@@ -215,6 +216,15 @@ const manipur = createManipurGame({
   toast: (title, sub, icon) => UI.toast(title, sub, 'info', icon),
   progress: (id, v) => A.progress(id, v),
   add: (id, n = 1) => A.progress(id, (state.tasks[id] || 0) + n),
+});
+
+// Buddy the dog and the Golden Workshop
+const dog = createDog({
+  scene, W, player, sound, bursts, reward,
+  state: () => state,
+  toast: (title, sub, icon) => UI.toast(title, sub, 'info', icon),
+  progress: (id, v) => A.progress(id, v),
+  riding: () => !!ride,
 });
 
 // ------------------------------------------------------------------ explorer name
@@ -415,7 +425,15 @@ function awardCerts() {
 }
 
 const certName = () => settings.certName || settings.explorer || '';
+// the Grand Certificate's issue date is fixed the first time it is unlocked
+function ensureGrandDate() {
+  if (!state.grandDate && (state.certs || []).length >= GRAND_NEEDS) {
+    state.grandDate = new Date().toISOString().slice(0, 10);
+    persist();
+  }
+}
 function openCerts() {
+  ensureGrandDate();
   lessons.onClose();
   puzzles.close();
   UI.showRawPanel({ kicker: 'Cloud Island Academy', title: '🎓 Your certificates', color: '#fbbf24', html: certsPanelHTML(state, certName()) });
@@ -426,7 +444,8 @@ function downloadCert(id) {
   if (!name) return openCerts();
   if (id === 'grand') {
     const list = CERTS.filter((c) => state.certs.some((x) => x.id === c.id));
-    const date = new Date().toISOString().slice(0, 10);
+    ensureGrandDate();
+    const date = state.grandDate;
     downloadCanvas(renderCertificate({ name, date, code: certCode(name, 'grand', date), grand: true, list }), `Cloud-Island-Grand-Certificate-${name.replace(/\s+/g, '-')}.png`);
   } else {
     const rec = state.certs.find((x) => x.id === id);
@@ -493,6 +512,12 @@ function openIsle(id) {
   });
   sound.open();
 }
+function openWorkshop() {
+  lessons.onClose();
+  puzzles.close();
+  UI.showRawPanel({ kicker: 'Cloud Island · near the Fun Park', title: '🛠️ Golden Workshop', color: '#facc15', html: dog.workshopHTML() });
+  sound.open();
+}
 function openRiddle() {
   const solved = state.riddles.includes('mystery');
   UI.showRawPanel({
@@ -552,6 +577,8 @@ function openPanel(id) {
   }
   if (id.startsWith('isle:')) return openIsle(id.slice(5));
   if (id === 'riddle:mystery') return openRiddle();
+  if (id === 'dog') return dog.pet();
+  if (id === 'workshop') return openWorkshop();
   if (id === 'calendar' || id.startsWith('month:')) {
     lessons.onClose();
     puzzles.close();
@@ -619,6 +646,7 @@ addEventListener('keydown', (e) => {
   if ((e.code === 'KeyE' || e.code === 'Enter') && !e.repeat) doAction();
   if (e.code === 'KeyH' || e.key === '?') UI.openOverlay($('#help'));
   if (e.code === 'KeyK') openCerts();
+  if (e.code === 'KeyG' && !e.repeat) dog.command();
   if (e.code === 'KeyC') UI.openOverlay($('#classic'));
   keys.add(e.code);
 });
@@ -771,6 +799,11 @@ document.addEventListener('click', (e) => {
   if (puzzles.handleClick(e.target)) return;
   const dl = e.target.closest('[data-cert-dl]');
   if (dl) return downloadCert(dl.dataset.certDl);
+  const cr = e.target.closest('[data-craft]');
+  if (cr) {
+    if (dog.craft(cr.dataset.craft)) openWorkshop();
+    return;
+  }
   const cb = e.target.closest('[data-cube]');
   if (cb) return cubeAction(cb.dataset.cube);
   const open = e.target.closest('[data-open]');
@@ -860,6 +893,7 @@ function flash() {
 $('#btn-map').addEventListener('click', toggleMap);
 $('#btn-help').addEventListener('click', () => UI.openOverlay($('#help')));
 $('#btn-certs').addEventListener('click', openCerts);
+$('#btn-dog').addEventListener('click', () => dog.command());
 $('#btn-classic').addEventListener('click', () => UI.openOverlay($('#classic')));
 $('#btn-classic-start').addEventListener('click', () => UI.openOverlay($('#classic')));
 $('#btn-sound').addEventListener('click', () => {
@@ -1049,6 +1083,7 @@ function updateGame(dt) {
   input.jump = false;
   A.update(dt, t);
   manipur.update(dt);
+  dog.update(dt);
   const p = player.pos;
 
   if (player.onGround && player.speed > 9 && p.y < 0.5) {

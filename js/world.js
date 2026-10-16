@@ -40,6 +40,7 @@ const NO_TREES = [
   [FALLS.x, FALLS.z, FALLS.x, FALLS.z, 11.5], // lagoon + cliff
   [13, 47, 34, 47, 3.5], // stunt ramp run-up
   [5, 28, 5, 28, 2.5], // challenge board
+  [17, 32, 17, 32, 7], // Golden Workshop (dog.js)
   [SNOW.x, SNOW.z, SNOW.x, SNOW.z, 13],
   // stations and bridgeheads to the other islands
   ...Object.values(STATIONS).map(([x, z]) => [x, z, x * 1.2, z * 1.2, 5]),
