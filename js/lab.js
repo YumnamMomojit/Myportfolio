@@ -13,6 +13,8 @@ const STATIONS = [
   { id: 'learn:nn', title: 'Neural Networks', sub: 'neurons · layers · learning', color: '#fbbf24', angle: Math.PI - 1.7 },
   { id: 'learn:cnn', title: 'Convolutional Networks', sub: 'how AI sees images', color: '#4ade80', angle: Math.PI + 1.7 },
 ];
+// the course kiosk stands on the island-facing side, clear of the stations and the entrance
+const SAGA = { angle: 0.7, r: 6.2, color: '#f5b301' };
 
 export function buildLab(scene, W, circle, interact) {
   const rng = mulberry32(314);
@@ -76,6 +78,42 @@ export function buildLab(scene, W, circle, interact) {
     circle(p.x, p.z, 1.15, 3);
     interact({ id: s.id, zone: 'lab', label: `Start lesson: ${s.title} 🎓`, x: p.x - dir.x * 1.7, z: p.z - dir.z * 1.7, r: 2.4, object: g });
     visuals[s.id] = g;
+  }
+
+  // AI Engineer Saga kiosk: a giant wrapped candy by the lab entrance that opens the course
+  const sagaP = C.clone().add(new THREE.Vector3(Math.cos(SAGA.angle), 0, Math.sin(SAGA.angle)).multiplyScalar(SAGA.r));
+  {
+    const dir = new THREE.Vector3(Math.cos(SAGA.angle), 0, Math.sin(SAGA.angle));
+    const g = new THREE.Group();
+    g.position.copy(sagaP);
+    g.rotation.y = Math.atan2(dir.x, dir.z); // face out towards the island
+    g.add(mesh(new THREE.CylinderGeometry(0.9, 1.1, 0.9, 8), kiosk, 0, 0.45, 0));
+    g.add(mesh(new THREE.TorusGeometry(0.95, 0.05, 6, 32), glowMat(SAGA.color, 2), 0, 0.92, 0, false).rotateX(Math.PI / 2));
+    const candy = new THREE.Group();
+    candy.position.y = 2.1;
+    const body = mesh(new THREE.SphereGeometry(0.5, 20, 14), std(SAGA.color, { roughness: 0.25, metalness: 0.1, emissive: '#a16207', emissiveIntensity: 0.35, flatShading: false }), 0, 0, 0);
+    body.scale.x = 1.3;
+    candy.add(body);
+    const stripe = glowMat('#86efac', 1.4);
+    for (const k of [-0.32, 0, 0.32]) candy.add(mesh(new THREE.TorusGeometry(0.47 - Math.abs(k) * 0.35, 0.035, 6, 28), stripe, k * 1.3, 0, 0, false).rotateY(Math.PI / 2));
+    const wrap = std('#fde68a', { roughness: 0.4, emissive: '#f59e0b', emissiveIntensity: 0.3 });
+    for (const s of [-1, 1]) {
+      const twist = mesh(new THREE.ConeGeometry(0.34, 0.55, 8), wrap, s * 0.85, 0, 0);
+      twist.rotation.z = s * Math.PI / 2;
+      candy.add(twist);
+    }
+    g.add(candy);
+    const lbl = makeLabel('🍬 AI Engineer Saga', { sub: 'a playable 39-level course', accent: SAGA.color, height: 0.5 });
+    lbl.position.y = 3.6;
+    g.add(lbl);
+    scene.add(g);
+    circle(sagaP.x, sagaP.z, 1.15, 3);
+    interact({ id: 'course:ai-engineer', zone: 'lab', label: 'Play the AI Engineer Saga 🍬', x: sagaP.x + dir.x * 1.7, z: sagaP.z + dir.z * 1.7, r: 2.4, object: g });
+    W.updaters.push((t) => {
+      candy.rotation.y = t * 0.9;
+      candy.rotation.z = Math.sin(t * 1.3) * 0.18;
+      candy.position.y = 2.1 + Math.sin(t * 2) * 0.12;
+    });
   }
 
   // Three.js station: a mesh that flips between geometry (wireframe) and material (solid)
@@ -225,6 +263,7 @@ export function buildLab(scene, W, circle, interact) {
       const a = rng() * Math.PI * 2, r = 1.5 + rng() * 5;
       const p = new THREE.Vector3(C.x + Math.cos(a) * r, 0.35, C.z + Math.sin(a) * r);
       if (STATIONS.some((s) => p.distanceTo(C.clone().add(new THREE.Vector3(Math.cos(s.angle), 0, Math.sin(s.angle)).multiplyScalar(5.6))) < 2)) continue;
+      if (Math.hypot(p.x - sagaP.x, p.z - sagaP.z) < 2) continue;
       const m = mesh(cubeGeo, glowMat(['#fde68a', '#86efac', '#f9a8d4'][cubes.length % 3], 1.6), p.x, p.y, p.z, false);
       scene.add(m);
       cubes.push(m);

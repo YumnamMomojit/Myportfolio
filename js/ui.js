@@ -69,6 +69,12 @@ function recommendation() {
 
 const pubLink = (p) => (p.url ? extLink(p.url, 'View') : `<span class="tag">${esc(p.note || '')}</span>`);
 
+// the standalone course under courses/; it has its own "← Portfolio" link back here
+export const COURSE = {
+  name: 'AI Engineer Saga', icon: '🍬', color: '#f5b301', url: './courses/ai-engineer/',
+  blurb: 'A playable AI-engineer course: 39 gold-and-green 3D levels across 12 worlds, from Python and linear algebra to RAG, agents, Kubernetes and evals.',
+};
+
 function linksRow() {
   const L = PROFILE.links;
   return `<div class="link-row">
@@ -678,6 +684,8 @@ export function buildClassic() {
       <div class="stats">${PROFILE.stats.map((s) => `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span></div>`).join('')}</div>${recommendation()}</section>
     <section><h2>Journey across India</h2><p>From my hometown <b>${esc(PROFILE.hometown)}</b> to ${esc(PROFILE.location)}.</p>
       <div class="journey">${indiaMap()}${journeyList()}</div></section>
+    <section><h2>Courses</h2><div class="cards"><div class="card" style="--c:${COURSE.color}"><h4>${COURSE.icon} ${esc(COURSE.name)}</h4><p>${esc(COURSE.blurb)}</p>
+      <a class="btn small primary" href="${esc(COURSE.url)}">▶ Play the course</a></div></div></section>
     <section><h2>Experience</h2>
       ${[...EXPERIENCE].reverse().map((e) => `<article class="cv-item"><div class="cv-row"><h3>${esc(e.role)}</h3><span class="period">${esc(e.period)}</span></div>
         <p class="org">${esc(e.org)}</p>${bullets(e.points)}</article>`).join('')}</section>
