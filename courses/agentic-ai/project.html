@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Final Project · Agentic AI Saga</title>
+  <meta name="description" content="The Agentic AI Saga final project: build a support-triage agent and verify it automatically on GitHub to earn the Certified Agentic AI Engineer certificate." />
+  <meta name="theme-color" content="#1fa45c" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏁</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../shared/saga.css" />
+  <style>
+    html, body { height: auto; overflow: auto; }
+    body { background: linear-gradient(180deg, #5fcf8f, #fff3c4 420px, #f7fbef) no-repeat, #f7fbef; }
+    .page { width: min(860px, 100%); margin: 0 auto; padding: 16px 16px calc(40px + var(--safe-b)); }
+    .top { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+    h1 { margin: 18px 0 4px; font-size: clamp(1.8rem, 5vw, 2.6rem); color: #fff; text-shadow: 0 3px 0 var(--emerald-dark), 0 6px 14px rgba(10, 60, 30, 0.4); }
+    .lede { color: #123d24; font-size: 1.08rem; margin: 0 0 14px; }
+    .card { background: var(--card); border: 4px solid #fff; border-radius: 24px; padding: 18px 20px; margin: 16px 0; box-shadow: 0 6px 0 var(--card-edge), 0 14px 30px rgba(10, 40, 20, 0.12); }
+    .card h2 { margin: 0 0 8px; font-size: 1.3rem; color: var(--emerald-dark); }
+    .card p, .card li { line-height: 1.5; }
+    ol.steps, ul.reqs { padding-left: 1.3em; margin: 6px 0; }
+    ol.steps li, ul.reqs li { margin: 6px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px dashed #e4dcb4; vertical-align: top; }
+    td.pts { text-align: right; font-weight: 700; color: #a87400; white-space: nowrap; }
+    .files { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+    .files a { text-decoration: none; }
+    .lock { padding: 12px 14px; border-radius: 16px; background: #fff1c2; border: 2px dashed #f0cf6b; }
+    .lock ul { margin: 6px 0 0; padding-left: 1.2em; }
+    form.submit { display: grid; gap: 10px; }
+    form.submit label { font-weight: 600; }
+    form.submit input { font: inherit; padding: 0.65em 0.85em; border-radius: 14px; border: 2px solid #e4dcb4; width: 100%; }
+    .checks { list-style: none; margin: 12px 0 0; padding: 0; }
+    .checks li { display: flex; gap: 10px; align-items: baseline; padding: 6px 0; }
+    .checks small { color: var(--ink-soft); }
+    .msg { margin-top: 12px; padding: 12px 14px; border-radius: 14px; }
+    .msg.bad { background: #ffe8e3; }
+    .msg.ok { background: #e3ffef; }
+    .cert-img { width: 100%; border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18); margin-top: 10px; }
+    .note { font-size: 0.88rem; color: var(--ink-soft); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="top">
+      <a class="pill back" href="./" title="Back to the course">← <span class="txt">Course map</span></a>
+      <a class="pill" href="./#certificates">🎓 Certificates</a>
+    </div>
+    <h1>🏁 Final Project</h1>
+    <p class="lede">Build a real support-triage agent, check it automatically on GitHub, and earn the <b>Certified Agentic AI Engineer</b> certificate.</p>
+
+    <section class="card" id="status-card" aria-live="polite"></section>
+
+    <section class="card">
+      <h2>🎯 The brief</h2>
+      <p>Build an agent that reads incoming support tickets, looks up answers in a knowledge base, drafts replies with citations, and <b>asks a human before sending anything</b>. Any language and any LLM provider are fine.</p>
+      <ul class="reqs">
+        <li><b>Tool use</b> with at least 3 well-described tools.</li>
+        <li><b>An MCP server</b> that exposes at least one of those tools.</li>
+        <li><b>Retrieval</b> over a knowledge base, with citations in the replies.</li>
+        <li><b>Human approval</b> before any irreversible action, in a function you name in the manifest.</li>
+        <li><b>Injection resistance:</b> text inside tickets is data, never instructions.</li>
+        <li><b>An eval suite</b> of at least 20 tasks, including injection and approval tasks.</li>
+        <li><b>Tracing</b> that records each step with its tokens (and cost, if you can).</li>
+        <li><b>Limits</b> on steps, time and spend, with a graceful fallback message.</li>
+        <li><b>A README</b> (Setup, Architecture, Design decisions), a <b>reflection</b> of 150+ words and a <b>demo video</b> link.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>🛠️ Set up your repository</h2>
+      <ol class="steps">
+        <li>Create a <b>public</b> GitHub repository for your agent.</li>
+        <li>Add the starter files and fill them in:
+          <div class="files">
+            <a class="candy-btn small ghost" href="project/starter/agentic-ai.json" download>agentic-ai.json</a>
+            <a class="candy-btn small ghost" href="project/starter/evals/tasks.jsonl" download>evals/tasks.jsonl</a>
+            <a class="candy-btn small ghost" href="project/starter/evals/run_evals.py" download>evals/run_evals.py</a>
+            <a class="candy-btn small ghost" href="project/starter/traces/example.json" download>traces/example.json</a>
+            <a class="candy-btn small ghost" href="project/starter/README.template.md" download="README.md">README.md</a>
+            <a class="candy-btn small ghost" href="project/starter/REFLECTION.template.md" download="REFLECTION.md">REFLECTION.md</a>
+          </div>
+          <span class="note"><code>agentic-ai.json</code> tells the checks where your MCP server, approval function, eval command, trace and reflection are.</span>
+        </li>
+        <li>Save the workflow as <code>.github/workflows/agentic-ai-verify.yml</code>, <b>unchanged</b>:
+          <div class="files"><a class="candy-btn small green" href="project/agentic-ai-verify.yml" download>⬇ agentic-ai-verify.yml</a></div>
+        </li>
+        <li>If your evals call a model, add your key under <b>Settings → Secrets and variables → Actions</b> as <code>ANTHROPIC_API_KEY</code> (or <code>LLM_API_KEY</code> for another provider). Each check run uses your key, so keep the eval set small enough to be cheap.</li>
+        <li>Push to your default branch. The <b>Actions</b> tab shows the run and which checks passed.</li>
+        <li>When the run is green, submit your repository below.</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2>✅ What the automated checks look at</h2>
+      <table>
+        <thead><tr><th>Check</th><th style="text-align:right">Points</th></tr></thead>
+        <tbody>
+          <tr><td>Manifest <code>agentic-ai.json</code> is valid</td><td class="pts">5</td></tr>
+          <tr><td>README has Setup, Architecture and Design decisions</td><td class="pts">5</td></tr>
+          <tr><td>MCP server declared and present</td><td class="pts">10</td></tr>
+          <tr><td>Human-approval function declared and present</td><td class="pts">10</td></tr>
+          <tr><td>At least 20 eval tasks</td><td class="pts">10</td></tr>
+          <tr><td>Eval set has injection and approval tasks</td><td class="pts">5</td></tr>
+          <tr><td>Eval command runs and writes <code>eval_report.json</code></td><td class="pts">10</td></tr>
+          <tr><td>Eval pass rate of 70% or more <b>(required)</b></td><td class="pts">20</td></tr>
+          <tr><td>Every injection and approval task passes <b>(required)</b></td><td class="pts">10</td></tr>
+          <tr><td>Example trace with tokens per step</td><td class="pts">5</td></tr>
+          <tr><td>Reflection of at least 150 words</td><td class="pts">5</td></tr>
+          <tr><td>Demo video link</td><td class="pts">5</td></tr>
+        </tbody>
+      </table>
+      <p>You pass with <b>70 points or more</b> and both required checks.</p>
+      <p class="note">These checks are automated. They confirm that your project has the required parts and that your own eval suite passes on GitHub’s servers; they don’t judge code quality, and they trust the evals you write. The course confirms that the run used its unchanged workflow on your latest commit, and anyone can re-check your certificate later.</p>
+    </section>
+
+    <section class="card" id="submit-card">
+      <h2>📤 Submit for verification</h2>
+      <form class="submit" id="submit-form" autocomplete="off">
+        <label for="f-name">Your name, as it should appear on the certificate</label>
+        <input id="f-name" name="name" maxlength="40" required placeholder="Your full name" />
+        <label for="f-repo">Your GitHub repository</label>
+        <input id="f-repo" name="repo" required placeholder="https://github.com/you/support-agent" inputmode="url" />
+        <div><button class="candy-btn green" type="submit" id="f-go">🔍 Check my project</button></div>
+      </form>
+      <ul class="checks" id="checks"></ul>
+      <div id="result"></div>
+      <p class="note">The check runs in your browser and reads only public data from GitHub. Your name and repository stay in this browser until you share your certificate.</p>
+    </section>
+  </main>
+  <script type="module" src="js/project.js"></script>
+</body>
+</html>

@@ -98,7 +98,12 @@ There is also a **Classic view** (📄 button or `C`): a plain scrollable resume
 
 ## Courses
 
-[`courses/ai-engineer/`](courses/ai-engineer/) is the **AI Engineer Saga**: a standalone course in the style of Candy Crush levels. A 3D saga map leads through 12 worlds of the AI-engineer roadmap (Python, maths, classical ML, deep learning, LLMs, RAG, agents, serving, cloud and evals), with 39 levels to play. See [`courses/README.md`](courses/README.md).
+Two standalone courses in the style of Candy Crush levels, built on a shared 3D saga engine in `courses/shared/`:
+
+- [`courses/ai-engineer/`](courses/ai-engineer/), the **AI Engineer Saga**: 39 levels in 12 worlds of the AI-engineer roadmap (Python, maths, classical ML, deep learning, LLMs, RAG, agents, serving, cloud and evals).
+- [`courses/agentic-ai/`](courses/agentic-ai/), the **Agentic AI Saga**: 40 chapters in 10 parts, from what an agent is to shipping one. Each part earns a certificate, and all ten unlock a final project that is checked automatically on GitHub and earns the Certified Agentic AI Engineer certificate.
+
+See [`courses/README.md`](courses/README.md).
 
 ## Run locally
 

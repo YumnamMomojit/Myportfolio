@@ -1,6 +1,6 @@
 // Hybrid search: blend keyword (BM25) and dense scores so every query fetches the right book.
 import * as THREE from 'three';
-import { box, candy, candyMat, textPlane, label, setLabel, bfs, C, PALETTE } from '../kit.js';
+import { box, candy, candyMat, textPlane, label, setLabel, bfs, C, PALETTE } from '../../../shared/kit.js';
 
 const DOCS = [
   ['Error E-4031', 'disk quota exceeded'],

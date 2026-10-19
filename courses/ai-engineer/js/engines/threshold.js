@@ -1,6 +1,6 @@
 // Precision vs recall: slide a decision threshold over model scores.
 import * as THREE from 'three';
-import { box, candy, label, setLabel, bfs, C, PALETTE } from '../kit.js';
+import { box, candy, label, setLabel, bfs, C, PALETTE } from '../../../shared/kit.js';
 
 const POS = [0.97, 0.92, 0.88, 0.81, 0.74, 0.66, 0.58, 0.45, 0.33];
 const NEG = [0.71, 0.52, 0.41, 0.36, 0.28, 0.22, 0.15, 0.12, 0.07, 0.04, 0.02];

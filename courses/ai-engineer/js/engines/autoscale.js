@@ -1,6 +1,6 @@
 // Autoscaling tycoon: add servers before traffic peaks (they take an hour to boot), drop them after.
 import * as THREE from 'three';
-import { box, candy, candyMat, label, setLabel, C, PALETTE } from '../kit.js';
+import { box, candy, candyMat, label, setLabel, C, PALETTE } from '../../../shared/kit.js';
 
 export default function autoscale(ctx) {
   const { stage, params } = ctx;

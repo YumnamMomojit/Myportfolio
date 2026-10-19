@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Certificate Check · Agentic AI Saga</title>
+  <meta name="description" content="Check an Agentic AI Saga certificate from Cloud Island Academy." />
+  <meta property="og:title" content="Agentic AI Saga certificate" />
+  <meta property="og:description" content="Earned in the Agentic AI Saga, a playable 3D course by Yumnam Momojit Singh." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../shared/saga.css" />
+  <style>
+    html, body { height: auto; overflow: auto; }
+    body { background: linear-gradient(180deg, #5fcf8f, #fff3c4 380px, #f7fbef) no-repeat, #f7fbef; }
+    main { width: min(880px, 100%); margin: 0 auto; padding: 24px 16px 40px; }
+    .card { background: var(--card); border: 4px solid #fff; border-radius: 24px; padding: 20px; box-shadow: 0 6px 0 var(--card-edge), 0 14px 30px rgba(10, 40, 20, 0.12); }
+    .kicker { font-weight: 700; color: var(--emerald-dark); letter-spacing: 0.04em; }
+    h1 { margin: 6px 0 4px; font-size: 1.7rem; }
+    .status { margin: 14px 0; padding: 12px 14px; border-radius: 14px; font-weight: 600; }
+    .status.ok { background: #e3ffef; color: #13753f; }
+    .status.bad { background: #ffe8e3; color: #a3203a; }
+    .status.wait { background: #fff4cc; color: #7a5a00; }
+    .cert-img { display: block; width: 100%; height: auto; margin: 0 0 16px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18); }
+    .cert-img[hidden] { display: none; }
+    dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0 0 16px; }
+    dt { color: var(--ink-soft); font-size: 0.9rem; }
+    dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+    .note { color: var(--ink-soft); font-size: 0.88rem; }
+    @media (max-width: 520px) { dl { grid-template-columns: 1fr; gap: 2px; } dd { margin-bottom: 8px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="card">
+      <div class="kicker">🤖 Agentic AI Saga · certificate check</div>
+      <h1 id="title">Checking…</h1>
+      <div id="status" class="status wait">Checking…</div>
+      <div id="live" class="status wait" hidden></div>
+      <img id="cert" class="cert-img" alt="" hidden />
+      <dl id="facts"></dl>
+      <p><a class="candy-btn green" href="./">Play the Agentic AI Saga →</a></p>
+      <p class="note">The certificate ID confirms that the name, certificate and date belong together. Part certificates are generated in the earner’s browser for playing the course. The final certificate is also re-checked live against GitHub: the course’s unchanged workflow must have passed on the named commit. These are learning awards, not accredited academic qualifications.</p>
+    </div>
+  </main>
+  <script type="module">
+    import { certById, certCode, buildCertificate } from './js/certs.js';
+    import { recheck } from './js/github.js';
+
+    const q = new URLSearchParams(location.search);
+    const name = (q.get('n') || '').slice(0, 60), id = q.get('c') || '', date = q.get('d') || '', code = q.get('k') || '';
+    const final = q.get('r') ? { repo: q.get('r'), sha: q.get('s') || '', run: q.get('u') || '' } : null;
+    const cert = certById(id);
+    const proof = final ? `${final.repo}@${final.sha}#${final.run}` : '';
+    const valid = !!(cert && name && /^\d{4}-\d{2}-\d{2}$/.test(date) && code && certCode(name, id, date, proof) === code && (id !== 'aai-final' || final));
+    const $ = (s) => document.querySelector(s);
+
+    $('#title').textContent = cert ? `${cert.icon} ${cert.title}` : 'Unknown certificate';
+    $('#status').className = `status ${valid ? 'ok' : 'bad'}`;
+    $('#status').textContent = valid ? '✔ The certificate ID matches this certificate.' : '✖ This certificate ID does not match. The link may be incomplete or altered.';
+    const rows = [['Awarded to', name || '—'], ['Certificate', cert?.title || id || '—'], ['Covers', cert?.skill || '—'], ['Skills', (cert?.skills || []).join(' · ') || '—'], ['Issued', date || '—'], ['Certificate ID', code || '—']];
+    if (final) rows.push(['Project', `github.com/${final.repo}`], ['Commit', final.sha.slice(0, 12)]);
+    for (const [k, v] of rows) {
+      const dt = Object.assign(document.createElement('dt'), { textContent: k });
+      const dd = Object.assign(document.createElement('dd'), { textContent: v });
+      $('#facts').append(dt, dd);
+    }
+    document.title = valid ? `${name} · ${cert.title} · Agentic AI Saga` : 'Certificate Check · Agentic AI Saga';
+
+    if (valid) {
+      const { canvas } = await buildCertificate({ name, id, date, final });
+      const img = $('#cert');
+      img.src = canvas.toDataURL('image/png');
+      img.alt = `${cert.title} certificate awarded to ${name} on ${date}`;
+      img.hidden = false;
+    }
+
+    if (valid && final) {
+      const live = $('#live');
+      live.hidden = false;
+      live.textContent = '⏳ Re-checking the project on GitHub…';
+      try {
+        const r = await recheck(final.repo, final.sha, final.run);
+        live.className = 'status ok';
+        live.innerHTML = `✔ GitHub confirms the course’s checks passed on this commit${r.summary ? ` (${r.summary.replace(/[<>&]/g, '')})` : ''}. <a href="${r.runUrl}" target="_blank" rel="noopener">See the run ↗</a>`;
+      } catch (err) {
+        live.className = 'status bad';
+        live.textContent = `✖ Live check: ${err.message}`;
+      }
+    }
+  </script>
+</body>
+</html>

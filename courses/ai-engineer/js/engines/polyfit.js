@@ -1,6 +1,6 @@
 // Fit polynomial curves: too simple underfits, too wiggly overfits; ridge regularisation tames it.
 import * as THREE from 'three';
-import { candy, box, grid, label, mulberry32, gauss, C, PALETTE } from '../kit.js';
+import { candy, box, grid, label, mulberry32, gauss, C, PALETTE } from '../../../shared/kit.js';
 
 const SX = 5; // x in [−1, 1] → [−5, 5]
 const SY = 3;

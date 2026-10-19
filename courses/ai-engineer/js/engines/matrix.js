@@ -1,6 +1,6 @@
 // Edit a 2×2 matrix and watch it reshape the plane until the F matches the ghost.
 import * as THREE from 'three';
-import { box, arrow, grid, C, PALETTE } from '../kit.js';
+import { box, arrow, grid, C, PALETTE } from '../../../shared/kit.js';
 
 const SHAPE = [[0, 0], [0, 0.5], [0, 1], [0, 1.5], [0, 2], [0.5, 2], [1, 2], [1.5, 2], [0.5, 1], [1, 1]];
 

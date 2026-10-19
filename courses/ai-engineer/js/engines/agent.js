@@ -1,6 +1,6 @@
 // Plan an agent's tool calls, then run it and read the trace.
 import * as THREE from 'three';
-import { box, candy, candyMat, textPlane, label, C, PALETTE } from '../kit.js';
+import { box, candy, candyMat, textPlane, label, C, PALETTE } from '../../../shared/kit.js';
 
 const TOOLS = {
   get_weather: { icon: '🌤', tokens: 40, color: C.blue },

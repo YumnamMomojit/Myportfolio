@@ -341,7 +341,7 @@ function prop(w, rng) {
   const pick = (a) => a[Math.floor(rng() * a.length)];
   const add = (m, x = 0, y = 0, z = 0) => { m.position.set(x, y, z); g.add(m); return m; };
   const col = (r, h, color, x = 0, y = 0, z = 0) => add(new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 16), candyMat(color)), x, y + h / 2, z);
-  switch (w.id) {
+  switch (w.prop || w.id) {
     case 'python': {
       if (rng() < 0.35) {
         for (let k = 0; k < 5; k++) col(0.55 - k * 0.05, 0.6, k % 2 ? C.white : C.red, 0, k * 0.6);

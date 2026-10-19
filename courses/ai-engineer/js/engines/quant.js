@@ -1,6 +1,6 @@
 // Mixed-precision quantization: squeeze layers to fit GPU memory without wrecking accuracy.
 import * as THREE from 'three';
-import { box, candyMat, textPlane, label, setLabel, C, PALETTE } from '../kit.js';
+import { box, candyMat, textPlane, label, setLabel, C, PALETTE } from '../../../shared/kit.js';
 
 // A 7B model simplified into 8 equal groups of layers.
 const GROUPS = ['embeddings', 'block group 1', 'block group 2', 'block group 3', 'block group 4', 'block group 5', 'block group 6', 'output head'];

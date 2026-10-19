@@ -1,6 +1,6 @@
 // A linear classifier you steer by hand: turn and slide the wall to split two classes.
 import * as THREE from 'three';
-import { candy, box, grid, mulberry32, gauss, bfs, C, PALETTE } from '../kit.js';
+import { candy, box, grid, mulberry32, gauss, bfs, C, PALETTE } from '../../../shared/kit.js';
 
 const SPAN = 5;
 

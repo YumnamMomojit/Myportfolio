@@ -1,6 +1,6 @@
 // Turn an arrow and apply a matrix: find the arrows that only stretch (eigenvectors).
 import * as THREE from 'three';
-import { arrow, grid, label, C, PALETTE } from '../kit.js';
+import { arrow, grid, label, C, PALETTE } from '../../../shared/kit.js';
 
 export default function eigen(ctx) {
   const { stage, params } = ctx;

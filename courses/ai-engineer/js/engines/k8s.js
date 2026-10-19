@@ -1,6 +1,6 @@
 // Kubernetes rescue: a node sinks, and you reschedule its pods under real scheduling rules.
 import * as THREE from 'three';
-import { box, textPlane, label, C, PALETTE } from '../kit.js';
+import { box, textPlane, label, C, PALETTE } from '../../../shared/kit.js';
 
 const APP_COLORS = { db: C.purple, api: C.blue, web: C.pink, cache: C.orange, worker: C.green };
 

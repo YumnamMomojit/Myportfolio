@@ -1,6 +1,6 @@
 // Next-token sampling: temperature reshapes the odds, top-p cuts the tail.
 import * as THREE from 'three';
-import { box, candyMat, label, setLabel, textPlane, candy, bfs, PALETTE } from '../kit.js';
+import { box, candyMat, label, setLabel, textPlane, candy, bfs, PALETTE } from '../../../shared/kit.js';
 
 const TOKENS = [['mat', 3.2], ['floor', 2.6], ['sofa', 2.3], ['roof', 1.6], ['keyboard', 1.2], ['moon', 0.2], ['banana', -0.5], ['quantum', -1.2]];
 const NONSENSE = ['moon', 'banana', 'quantum'];

@@ -1,6 +1,6 @@
 // Gradient descent on a 3D loss landscape: pick the learning rate (and momentum), then step.
 import * as THREE from 'three';
-import { candy, candyMat, C, PALETTE } from '../kit.js';
+import { candy, candyMat, C, PALETTE } from '../../../shared/kit.js';
 
 const TERRAINS = {
   bowl: {

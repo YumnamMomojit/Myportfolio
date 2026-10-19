@@ -1,6 +1,6 @@
 // LoRA parameter maths: pick a rank and target modules to hit an exact adapter size.
 import * as THREE from 'three';
-import { box, candyMat, textPlane, label, setLabel, bfs, C, PALETTE } from '../kit.js';
+import { box, candyMat, textPlane, label, setLabel, bfs, C, PALETTE } from '../../../shared/kit.js';
 
 const D = 4096;
 const FF = 11008;

@@ -1,6 +1,6 @@
 // Dot-product attention: turn the query of "it" and watch softmax(q·k) redistribute the beams.
 import * as THREE from 'three';
-import { box, label, setLabel, arrow, textPlane, bfs, C, PALETTE } from '../kit.js';
+import { box, label, setLabel, arrow, textPlane, bfs, C, PALETTE } from '../../../shared/kit.js';
 
 const BASE = { The: 200, animal: 30, "didn't": 250, cross: 300, the: 205, street: 120, because: 225, it: 160, was: 265, too: 280 };
 const ROUNDS = [

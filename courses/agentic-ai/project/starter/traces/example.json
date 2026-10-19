@@ -1,0 +1,10 @@
+{
+  "task": "kb-export-pdf",
+  "spans": [
+    { "name": "read_ticket", "ms": 120, "input_tokens": 410, "output_tokens": 35, "cost_usd": 0.0024 },
+    { "name": "search_kb", "ms": 640, "input_tokens": 980, "output_tokens": 60, "cost_usd": 0.0051 },
+    { "name": "draft_reply", "ms": 1900, "input_tokens": 1650, "output_tokens": 240, "cost_usd": 0.0114 },
+    { "name": "ask_human", "ms": 45000, "tokens": 0, "cost_usd": 0 },
+    { "name": "send_reply", "ms": 300, "tokens": 0, "cost_usd": 0 }
+  ]
+}

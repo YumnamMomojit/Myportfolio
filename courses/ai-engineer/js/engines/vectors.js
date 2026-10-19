@@ -1,6 +1,6 @@
 // Fly a ship to each star by adding vectors tip to tail.
 import * as THREE from 'three';
-import { candy, label, arrow, grid, starGeo, candyMat, bfs, C, PALETTE } from '../kit.js';
+import { candy, label, arrow, grid, starGeo, candyMat, bfs, C, PALETTE } from '../../../shared/kit.js';
 
 const COLORS = [C.pink, C.blue, C.orange, C.green];
 const NAMES = ['a', 'b', 'c', 'd'];

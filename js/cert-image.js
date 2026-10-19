@@ -20,7 +20,7 @@ function fit(g, text, weight, size, family, maxW) {
 const SERIF = 'Georgia, "Times New Roman", serif';
 const SANS = '"Space Grotesk", sans-serif';
 
-export function renderCertificate({ name, cert, date, code, grand = false, list = [], url = '' }) {
+export function renderCertificate({ name, cert, date, code, grand = false, list = [], url = '', note = '' }) {
   const W = 2000, H = 1414;
   const cv = document.createElement('canvas');
   cv.width = W;
@@ -97,6 +97,12 @@ export function renderCertificate({ name, cert, date, code, grand = false, list 
     g.fillStyle = accent;
     fit(g, `Skills: ${cert.skills.join('  ·  ')}`, 600, 30, SANS, 1400);
     g.fillText(`Skills: ${cert.skills.join('  ·  ')}`, W / 2, y + 8);
+  }
+  // an optional extra line, e.g. the project that was verified
+  if (note && y < 1000) {
+    g.fillStyle = muted;
+    fit(g, note, 500, 26, SANS, 1400);
+    g.fillText(note, W / 2, y + 54);
   }
 
   // signature block (left)

@@ -1,6 +1,6 @@
 // Batching diner: wait to fill the GPU batch, but serve before customers lose patience.
 import * as THREE from 'three';
-import { box, candy, label, setLabel, textPlane, PALETTE } from '../kit.js';
+import { box, candy, label, setLabel, textPlane, PALETTE } from '../../../shared/kit.js';
 
 export default function batching(ctx) {
   const { stage, params } = ctx;

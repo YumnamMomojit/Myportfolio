@@ -1,6 +1,6 @@
 // One neuron: tune two weights and a bias to compute logic gates, then face XOR.
 import * as THREE from 'three';
-import { candy, candyMat, box, label, setLabel, bfs, C, PALETTE } from '../kit.js';
+import { candy, candyMat, box, label, setLabel, bfs, C, PALETTE } from '../../../shared/kit.js';
 
 const GATES = {
   AND: [0, 0, 0, 1],

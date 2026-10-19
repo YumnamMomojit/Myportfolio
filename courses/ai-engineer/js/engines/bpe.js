@@ -1,6 +1,6 @@
 // Byte-pair encoding as a candy-matching game: merge neighbouring tokens everywhere at once.
 import * as THREE from 'three';
-import { box, label, textPlane, disposeTree, PALETTE, MONO } from '../kit.js';
+import { box, label, textPlane, disposeTree, PALETTE, MONO } from '../../../shared/kit.js';
 
 export default function bpe(ctx) {
   const { stage, params } = ctx;

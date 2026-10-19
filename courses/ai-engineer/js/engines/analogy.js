@@ -1,6 +1,6 @@
 // Fly through a tiny 3D embedding space with vector arithmetic: king − man + woman ≈ queen.
 import * as THREE from 'three';
-import { candy, label, arrow, bfs, skyTexture, C, PALETTE } from '../kit.js';
+import { candy, label, arrow, bfs, skyTexture, C, PALETTE } from '../../../shared/kit.js';
 
 // Hand-made 3D "embeddings": the axes loosely mean gender, royalty and age,
 // and country → capital is one shared direction.

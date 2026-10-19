@@ -1,6 +1,6 @@
 // Bayesian detective: flip the mystery coin, update beliefs, accuse when sure.
 import * as THREE from 'three';
-import { box, candy, label, setLabel, C, PALETTE } from '../kit.js';
+import { box, candy, label, setLabel, C, PALETTE } from '../../../shared/kit.js';
 
 const COLORS = [C.pink, C.blue, C.green, C.orange];
 

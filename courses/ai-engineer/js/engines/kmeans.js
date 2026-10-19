@@ -1,6 +1,6 @@
 // K-means with sheepdogs: assign each sheep to the nearest dog, move dogs to the middle.
 import * as THREE from 'three';
-import { candy, candyMat, grid, mulberry32, gauss, C, PALETTE } from '../kit.js';
+import { candy, candyMat, grid, mulberry32, gauss, C, PALETTE } from '../../../shared/kit.js';
 
 const DOG_COLORS = [C.orange, C.purple, C.teal];
 const SPAN = 5.5;

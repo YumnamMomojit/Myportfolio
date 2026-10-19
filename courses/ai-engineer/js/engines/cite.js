@@ -1,6 +1,6 @@
 // Ground an answer: cite the source behind each claim, trap the hallucinated ones.
 import * as THREE from 'three';
-import { box, candyMat, textPlane, label, setLabel, C, PALETTE } from '../kit.js';
+import { box, candyMat, textPlane, label, setLabel, C, PALETTE } from '../../../shared/kit.js';
 
 // Nimbus Notes is a made-up app for this level.
 const SOURCES = [

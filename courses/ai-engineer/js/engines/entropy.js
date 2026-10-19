@@ -1,6 +1,6 @@
 // Move candies between jars to hit a target entropy.
 import * as THREE from 'three';
-import { candy, box, label, setLabel, C, PALETTE } from '../kit.js';
+import { candy, box, label, setLabel, C, PALETTE } from '../../../shared/kit.js';
 
 const COLORS = [C.pink, C.blue, C.green, C.orange];
 

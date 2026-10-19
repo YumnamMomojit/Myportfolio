@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Agentic AI Saga</title>
+  <meta name="description" content="A playable Agentic AI course: 40 chapters of 3D puzzles, a certificate for each part, and a final project verified on GitHub." />
+  <meta name="theme-color" content="#1fa45c" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../shared/saga.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="gl" aria-label="3D game view"></canvas>
+
+  <div id="loader" class="loader">
+    <div class="loader-candy" aria-hidden="true">🤖</div>
+    <p>Booting the Agentic AI Saga…</p>
+  </div>
+
+  <!-- Saga map HUD -->
+  <header id="map-hud" class="map-hud hidden">
+    <a class="pill back" href="../../" title="Back to Cloud Island" aria-label="Back to the portfolio">← <span class="txt">Portfolio</span></a>
+    <div class="saga-title"><span aria-hidden="true">🤖</span> Agentic AI Saga</div>
+    <div class="pill stars-pill" title="Stars earned"><span aria-hidden="true">⭐</span> <b id="total-stars">0</b><small id="max-stars">/120</small></div>
+    <button id="btn-settings" class="round-btn" title="Settings" aria-label="Settings">⚙️</button>
+  </header>
+  <div id="world-chip" class="world-chip hidden" aria-live="polite"></div>
+  <div id="map-tip" class="map-tip hidden">Scroll or drag to travel · click a chapter to play</div>
+
+  <!-- Level HUD -->
+  <div id="level-hud" class="level-hud hidden">
+    <div class="moves-bubble" title="Moves left"><small>Moves</small><b id="moves">0</b></div>
+    <div class="goal-card">
+      <div class="goal-top"><span id="lvl-tag" class="lvl-tag"></span><span id="round" class="round-tag hidden"></span></div>
+      <div id="goal" class="goal-text"></div>
+      <div class="star-meter" id="star-meter" aria-label="Stars still possible"><span>★</span><span>★</span><span>★</span></div>
+    </div>
+    <div class="hud-btns">
+      <button id="btn-hint" class="round-btn" title="Hint" aria-label="Hint">💡</button>
+      <button id="btn-pause" class="round-btn" title="Pause" aria-label="Pause">⏸</button>
+    </div>
+  </div>
+  <div id="status" class="status hidden" aria-live="polite"></div>
+  <div id="dock" class="dock hidden" role="group" aria-label="Level controls"></div>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div id="modal-card" class="modal-card"></div>
+  </div>
+
+  <noscript><p class="noscript">This course is a 3D game and needs JavaScript.</p></noscript>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

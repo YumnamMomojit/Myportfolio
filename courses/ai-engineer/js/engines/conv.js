@@ -1,6 +1,6 @@
 // Slide 3×3 kernels over an image and match the target feature maps.
 import * as THREE from 'three';
-import { box, label, C, PALETTE } from '../kit.js';
+import { box, label, C, PALETTE } from '../../../shared/kit.js';
 
 const KERNELS = {
   vertical: [[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]],

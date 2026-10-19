@@ -1,0 +1,140 @@
+# agentic-ai-verify v1
+# Final-project checks for the Agentic AI Saga (Cloud Island Academy).
+# Copy this file unchanged to .github/workflows/agentic-ai-verify.yml in your project.
+# The course compares it with its own copy, so any edit makes verification fail.
+name: agentic-ai-verify
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install project dependencies
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run the course checks
+        id: check
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, re, subprocess, sys
+
+          root = pathlib.Path('.')
+          results = []
+
+          def check(name, points, ok, detail=''):
+              results.append((name, points, bool(ok)))
+              print(f"{'PASS' if ok else 'FAIL'} [{points:>2}] {name}" + (f" - {detail}" if detail else ''))
+
+          def read(path):
+              p = root / path
+              return p.read_text(encoding='utf-8', errors='replace') if path and p.is_file() else ''
+
+          # 1. The manifest that tells the checks where everything is
+          try:
+              m = json.loads(read('agentic-ai.json'))
+          except Exception as err:
+              m = {}
+              print('agentic-ai.json:', err)
+          check('agentic-ai.json manifest', 5, isinstance(m, dict) and m.get('name'))
+          if not isinstance(m, dict):
+              m = {}
+
+          # 2. README sections
+          heads = [h.lower() for h in re.findall(r'^#{1,3}\s+(.+)$', read('README.md'), re.M)]
+          missing = [s for s in ('setup', 'architecture', 'design decisions') if not any(s in h for h in heads)]
+          check('README has Setup, Architecture and Design decisions', 5, not missing, ', '.join(missing))
+
+          # 3. An MCP server
+          mcp_code = read(m.get('mcp_server', ''))
+          check('MCP server declared and present', 10, re.search(r'FastMCP|McpServer|modelcontextprotocol|mcp\.server', mcp_code), m.get('mcp_server', 'not declared'))
+
+          # 4. A human-approval gate: "path/to/file.py::function_name"
+          gate_file, _, gate_fn = (m.get('approval_gate') or '').partition('::')
+          check('Human-approval gate declared and present', 10, gate_fn and re.search(rf'(def|function|const)\s+{re.escape(gate_fn)}\b', read(gate_file)), m.get('approval_gate', 'not declared'))
+
+          # 5. The eval set
+          tasks = []
+          for line in read('evals/tasks.jsonl').splitlines():
+              if line.strip():
+                  try:
+                      tasks.append(json.loads(line))
+                  except Exception:
+                      pass
+          tasks = [t for t in tasks if isinstance(t, dict) and t.get('id') and t.get('input')]
+          check('At least 20 eval tasks in evals/tasks.jsonl', 10, len(tasks) >= 20, f'{len(tasks)} tasks')
+          special = {t['id']: set(t.get('tags', [])) for t in tasks}
+          has_inj = any('injection' in tags for tags in special.values())
+          has_app = any('approval' in tags for tags in special.values())
+          check('Eval set has injection and approval tasks', 5, has_inj and has_app)
+
+          # 6. Run the evals; they must write eval_report.json
+          report = {}
+          cmd = m.get('eval_command')
+          if cmd:
+              try:
+                  subprocess.run(cmd, shell=True, timeout=1200, check=False)
+                  report = json.loads(read('eval_report.json') or '{}')
+              except Exception as err:
+                  print('eval command:', err)
+          rows = report.get('results', []) if isinstance(report, dict) else []
+          passed_ids = {r.get('id') for r in rows if isinstance(r, dict) and r.get('passed') is True}
+          check('Eval command ran and wrote eval_report.json', 10, rows, cmd or 'eval_command not declared')
+          total = len(tasks)
+          passed = len([t for t in tasks if t['id'] in passed_ids])
+          rate = passed / total if total else 0
+          check('Eval pass rate of 70% or more', 20, total >= 20 and rate >= 0.7, f'{passed}/{total}')
+          critical = [i for i, tags in special.items() if tags & {'injection', 'approval'}]
+          check('Every injection and approval task passed', 10, critical and all(i in passed_ids for i in critical))
+
+          # 7. An example trace with tokens per step
+          try:
+              trace = json.loads(read(m.get('trace_example', '')) or '[]')
+          except Exception:
+              trace = []
+          spans = trace.get('spans', []) if isinstance(trace, dict) else trace
+          check('Example trace with tokens per step', 5, isinstance(spans, list) and len(spans) >= 3 and all(isinstance(s, dict) and s.get('name') and any(k in s for k in ('tokens', 'input_tokens', 'output_tokens')) for s in spans))
+
+          # 8. Reflection and demo
+          words = len(read(m.get('reflection', '')).split())
+          check('Reflection of at least 150 words', 5, words >= 150, f'{words} words')
+          check('Demo video link', 5, re.match(r'https?://\S+', str(m.get('demo_video', ''))))
+
+          score = sum(p for _, p, ok in results if ok)
+          names = {n: ok for n, _, ok in results}
+          ok = score >= 70 and names['Eval pass rate of 70% or more'] and names['Every injection and approval task passed']
+          summary = f'AAI-v1 score={score}/100 evals={passed}/{total} {"PASS" if ok else "FAIL"}'
+          pathlib.Path('.agentic-ai-summary').write_text(summary)
+          print(summary)
+          sys.exit(0 if ok else 1)
+          PY
+
+      - name: Publish the result for the course
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          STATE=failure
+          if [ "${{ steps.check.outcome }}" = "success" ]; then STATE=success; fi
+          DESC=$(cat .agentic-ai-summary 2>/dev/null || echo "checks did not finish")
+          gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -f state="$STATE" -f context="agentic-ai-verify" -f description="$DESC" \
+            -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

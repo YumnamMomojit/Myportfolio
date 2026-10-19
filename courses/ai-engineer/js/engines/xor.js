@@ -1,6 +1,6 @@
 // Train a real 2-2-1 network on XOR with backpropagation, live in the browser.
 import * as THREE from 'three';
-import { candy, candyMat, box, label, setLabel, mulberry32, C, PALETTE } from '../kit.js';
+import { candy, candyMat, box, label, setLabel, mulberry32, C, PALETTE } from '../../../shared/kit.js';
 
 const X = [[0, 0], [0, 1], [1, 0], [1, 1]];
 const Y = [0, 1, 1, 0];

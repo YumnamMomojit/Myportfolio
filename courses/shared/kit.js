@@ -117,7 +117,7 @@ export function label(text, opts = {}) {
 export function textPlane(text, opts = {}) {
   const lines = String(text).split('\n');
   const c = textCanvas(lines, opts);
-  const h = opts.height ?? 0.5;
+  const h = (opts.height ?? 0.5) * lines.length; // height is per line of text
   const w = opts.width ?? (h * c.width) / c.height;
   const m = new THREE.Mesh(
     new THREE.PlaneGeometry(w, opts.width ? (w * c.height) / c.width : h),

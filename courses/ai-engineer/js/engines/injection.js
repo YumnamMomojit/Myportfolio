@@ -1,6 +1,6 @@
 // Prompt-injection defence: only the user gives instructions; everything else is data.
 import * as THREE from 'three';
-import { box, textPlane, label, setLabel, C, PALETTE } from '../kit.js';
+import { box, textPlane, label, setLabel, C, PALETTE } from '../../../shared/kit.js';
 
 const ITEMS = [
   { src: 'User chat', text: 'Summarise my unread emails.', kind: 'follow', why: 'The user is the one person who gives instructions.' },
