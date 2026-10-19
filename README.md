@@ -96,6 +96,10 @@ Progress is saved in the visitor's browser.
 
 There is also a **Classic view** (📄 button or `C`): a plain scrollable resume for recruiters and screen readers. It also appears if WebGL is unavailable.
 
+## Courses
+
+[`courses/ai-engineer/`](courses/ai-engineer/) is the **AI Engineer Saga**: a standalone course in the style of Candy Crush levels. A 3D saga map leads through 12 worlds of the AI-engineer roadmap (Python, maths, classical ML, deep learning, LLMs, RAG, agents, serving, cloud and evals), with 39 levels to play. See [`courses/README.md`](courses/README.md).
+
 ## Run locally
 
 The site is plain static files with no build step. Browsers block ES modules on `file://`, so serve the folder:
