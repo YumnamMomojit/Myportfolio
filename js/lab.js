@@ -13,8 +13,9 @@ const STATIONS = [
   { id: 'learn:nn', title: 'Neural Networks', sub: 'neurons · layers · learning', color: '#fbbf24', angle: Math.PI - 1.7 },
   { id: 'learn:cnn', title: 'Convolutional Networks', sub: 'how AI sees images', color: '#4ade80', angle: Math.PI + 1.7 },
 ];
-// the course kiosk stands on the island-facing side, clear of the stations and the entrance
+// the course kiosks stand on the island-facing side, either side of the entrance and clear of the stations
 const SAGA = { angle: 0.7, r: 6.2, color: '#f5b301' };
+const AGENTIC = { angle: -0.7, r: 6.2, color: '#1fa45c' };
 
 export function buildLab(scene, W, circle, interact) {
   const rng = mulberry32(314);
@@ -113,6 +114,48 @@ export function buildLab(scene, W, circle, interact) {
       candy.rotation.y = t * 0.9;
       candy.rotation.z = Math.sin(t * 1.3) * 0.18;
       candy.position.y = 2.1 + Math.sin(t * 2) * 0.12;
+    });
+  }
+
+  // Agentic AI Saga kiosk: a little green robot on the other side of the entrance
+  const botP = C.clone().add(new THREE.Vector3(Math.cos(AGENTIC.angle), 0, Math.sin(AGENTIC.angle)).multiplyScalar(AGENTIC.r));
+  {
+    const dir = new THREE.Vector3(Math.cos(AGENTIC.angle), 0, Math.sin(AGENTIC.angle));
+    const g = new THREE.Group();
+    g.position.copy(botP);
+    g.rotation.y = Math.atan2(dir.x, dir.z); // face out towards the island
+    g.add(mesh(new THREE.CylinderGeometry(0.9, 1.1, 0.9, 8), kiosk, 0, 0.45, 0));
+    g.add(mesh(new THREE.TorusGeometry(0.95, 0.05, 6, 32), glowMat(AGENTIC.color, 2), 0, 0.92, 0, false).rotateX(Math.PI / 2));
+    const bot = new THREE.Group();
+    bot.position.y = 2.1;
+    const shell = std(AGENTIC.color, { roughness: 0.3, metalness: 0.2, emissive: '#0f5132', emissiveIntensity: 0.35 });
+    const gold = std('#f5b301', { roughness: 0.3, metalness: 0.4, emissive: '#a16207', emissiveIntensity: 0.35 });
+    bot.add(mesh(new THREE.BoxGeometry(0.95, 0.75, 0.75), shell, 0, 0, 0));
+    const visor = mesh(new THREE.BoxGeometry(0.72, 0.3, 0.05), std('#0b1f17', { roughness: 0.2 }), 0, 0.04, 0.38);
+    bot.add(visor);
+    const eye = glowMat('#fde68a', 2);
+    const eyes = [-0.17, 0.17].map((x) => {
+      const e = mesh(new THREE.SphereGeometry(0.07, 12, 8), eye, x, 0.04, 0.41, false);
+      bot.add(e);
+      return e;
+    });
+    for (const s of [-1, 1]) bot.add(mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.1, 12), gold, s * 0.52, 0, 0).rotateZ(Math.PI / 2));
+    bot.add(mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.3, 6), gold, 0, 0.52, 0));
+    const tip = mesh(new THREE.SphereGeometry(0.08, 12, 8), glowMat('#f5b301', 2), 0, 0.7, 0, false);
+    bot.add(tip);
+    g.add(bot);
+    const lbl = makeLabel('🤖 Agentic AI Saga', { sub: 'a playable 40-chapter course', accent: AGENTIC.color, height: 0.5 });
+    lbl.position.y = 3.6;
+    g.add(lbl);
+    scene.add(g);
+    circle(botP.x, botP.z, 1.15, 3);
+    interact({ id: 'course:agentic-ai', zone: 'lab', label: 'Play the Agentic AI Saga 🤖', x: botP.x + dir.x * 1.7, z: botP.z + dir.z * 1.7, r: 2.4, object: g });
+    W.updaters.push((t) => {
+      bot.rotation.y = Math.sin(t * 0.8) * 0.6;
+      bot.position.y = 2.1 + Math.sin(t * 2 + 1) * 0.12;
+      tip.scale.setScalar(1 + Math.sin(t * 5) * 0.25);
+      const blink = (t % 3.2) < 0.12 ? 0.15 : 1;
+      for (const e of eyes) e.scale.y = blink;
     });
   }
 
@@ -263,7 +306,7 @@ export function buildLab(scene, W, circle, interact) {
       const a = rng() * Math.PI * 2, r = 1.5 + rng() * 5;
       const p = new THREE.Vector3(C.x + Math.cos(a) * r, 0.35, C.z + Math.sin(a) * r);
       if (STATIONS.some((s) => p.distanceTo(C.clone().add(new THREE.Vector3(Math.cos(s.angle), 0, Math.sin(s.angle)).multiplyScalar(5.6))) < 2)) continue;
-      if (Math.hypot(p.x - sagaP.x, p.z - sagaP.z) < 2) continue;
+      if ([sagaP, botP].some((k) => Math.hypot(p.x - k.x, p.z - k.z) < 2)) continue;
       const m = mesh(cubeGeo, glowMat(['#fde68a', '#86efac', '#f9a8d4'][cubes.length % 3], 1.6), p.x, p.y, p.z, false);
       scene.add(m);
       cubes.push(m);

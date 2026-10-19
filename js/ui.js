@@ -69,11 +69,20 @@ function recommendation() {
 
 const pubLink = (p) => (p.url ? extLink(p.url, 'View') : `<span class="tag">${esc(p.note || '')}</span>`);
 
-// the standalone course under courses/; it has its own "← Portfolio" link back here
-export const COURSE = {
-  name: 'AI Engineer Saga', icon: '🍬', color: '#f5b301', url: './courses/ai-engineer/',
-  blurb: 'A playable AI-engineer course: 39 gold-and-green 3D levels across 12 worlds, from Python and linear algebra to RAG, agents, Kubernetes and evals.',
-};
+// the standalone courses under courses/; each has its own "← Portfolio" link back here
+export const COURSES = [
+  {
+    id: 'ai-engineer', name: 'AI Engineer Saga', icon: '🍬', color: '#f5b301', url: './courses/ai-engineer/',
+    blurb: 'A playable AI-engineer course: 39 gold-and-green 3D levels across 12 worlds, from Python and linear algebra to RAG, agents, Kubernetes and evals.',
+    how: 'Each level turns one idea into a small puzzle: earn ★★★ by finishing within par, unlock the next level on the saga map, and see the real code behind what you just did.',
+  },
+  {
+    id: 'agentic-ai', name: 'Agentic AI Saga', icon: '🤖', color: '#1fa45c', url: './courses/agentic-ai/',
+    blurb: 'A playable Agentic AI course: 40 gold-and-green 3D chapters across 10 parts, from the agent loop and tool use to MCP, memory, multi-agent systems, safety and shipping.',
+    how: 'Each part ends in a 👑 boss and earns its own certificate; finish all ten to unlock a final project, built in your own GitHub repository and verified there.',
+  },
+];
+export const courseById = (id) => COURSES.find((c) => c.id === id);
 
 function linksRow() {
   const L = PROFILE.links;
@@ -684,8 +693,9 @@ export function buildClassic() {
       <div class="stats">${PROFILE.stats.map((s) => `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span></div>`).join('')}</div>${recommendation()}</section>
     <section><h2>Journey across India</h2><p>From my hometown <b>${esc(PROFILE.hometown)}</b> to ${esc(PROFILE.location)}.</p>
       <div class="journey">${indiaMap()}${journeyList()}</div></section>
-    <section><h2>Courses</h2><div class="cards"><div class="card" style="--c:${COURSE.color}"><h4>${COURSE.icon} ${esc(COURSE.name)}</h4><p>${esc(COURSE.blurb)}</p>
-      <a class="btn small primary" href="${esc(COURSE.url)}">▶ Play the course</a></div></div></section>
+    <section><h2>Courses</h2><div class="cards">
+      ${COURSES.map((c) => `<div class="card" style="--c:${c.color}"><h4>${c.icon} ${esc(c.name)}</h4><p>${esc(c.blurb)}</p>
+        <a class="btn small primary" href="${esc(c.url)}">▶ Play the course</a></div>`).join('')}</div></section>
     <section><h2>Experience</h2>
       ${[...EXPERIENCE].reverse().map((e) => `<article class="cv-item"><div class="cv-row"><h3>${esc(e.role)}</h3><span class="period">${esc(e.period)}</span></div>
         <p class="org">${esc(e.org)}</p>${bullets(e.points)}</article>`).join('')}</section>

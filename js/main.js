@@ -684,14 +684,14 @@ function openWorkshop() {
   UI.showRawPanel({ kicker: 'Cloud Island · near the Fun Park', title: '🛠️ Golden Workshop', color: '#facc15', html: dog.workshopHTML() });
   sound.open();
 }
-function openCourse() {
+function openCourse(id) {
   lessons.onClose();
   puzzles.close();
-  const C = UI.COURSE;
+  const C = UI.courseById(id);
   UI.showRawPanel({
     kicker: 'AI Learning Lab · course', title: `${C.icon} ${C.name}`, color: C.color,
     html: `<p class="lead">${esc(C.blurb)}</p>
-      <p>Each level turns one idea into a small puzzle: earn ★★★ by finishing within par, unlock the next level on the saga map, and see the real code behind what you just did.</p>
+      <p>${esc(C.how)}</p>
       <p><a class="btn primary" href="${esc(C.url)}">▶ Play the ${esc(C.name)}</a></p>
       <p class="muted">Opens in this tab. Your island progress stays saved in this browser — use ← Portfolio in the course to come back.</p>`,
   });
@@ -759,7 +759,7 @@ function openPanel(id) {
   if (id === 'riddle:mystery') return openRiddle();
   if (id === 'dog') return dog.pet();
   if (id === 'workshop') return openWorkshop();
-  if (id === 'course:ai-engineer') return openCourse();
+  if (id.startsWith('course:') && UI.courseById(id.slice(7))) return openCourse(id.slice(7));
   lessons.onClose();
   puzzles.close();
   if (id === 'secret' && W.chest) W.chest.open = true;
